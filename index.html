@@ -36,41 +36,35 @@
       </div>
     </div>
 
-    <!-- Barra de Filtros interactivos -->
-    <div id="filterBar" class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/80 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div>
-        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Buscador General</label>
-        <input type="text" id="search" placeholder="🔍 Buscar por Cliente, Medio, Marca..." 
-          class="w-full bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-blue-500 transition text-sm">
-      </div>
-      <div>
-        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Centro de Costos</label>
-        <select id="filterCC" class="w-full bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-blue-500 transition text-sm">
-          <option value="">🏢 Todos los Centros de Costos</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mes</label>
-        <select id="filterMes" class="w-full bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-blue-500 transition text-sm">
-          <option value="">🗓️ Todos los Meses</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Tipo / Año</label>
-        <select id="filterTipo" class="w-full bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-blue-500 transition text-sm">
-          <option value="">📂 Todos los Tipos</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Indicador de Filtro de Marca Activo -->
-    <div id="activeFilterBadge" class="hidden bg-rose-50 border border-rose-200 text-[#e11d48] px-4 py-2 rounded-xl text-xs font-semibold flex justify-between items-center">
-      <span id="activeFilterText">Filtro aplicado por Marca: UHE</span>
-      <button onclick="resetMarcaFilter()" class="font-bold underline hover:text-rose-800">Quitar filtro</button>
-    </div>
-
     <!-- PANTALLA 1: VISIÓN GENERAL (Fondo Oscuro Principal) -->
     <div id="sectionVisaoGeral" class="space-y-6">
+      <!-- Filtros exclusivos de Visión General -->
+      <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/80 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Buscador General</label>
+          <input type="text" id="searchMain" placeholder="🔍 Buscar cliente, medio, grupo..." 
+            class="w-full bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-blue-500 transition text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Centro de Costos</label>
+          <select id="filterCCMain" class="w-full bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-blue-500 transition text-sm">
+            <option value="">🏢 Todos los Centros de Costos</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mes</label>
+          <select id="filterMesMain" class="w-full bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-blue-500 transition text-sm">
+            <option value="">🗓️ Todos los Meses</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Tipo / Año</label>
+          <select id="filterTipoMain" class="w-full bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-blue-500 transition text-sm">
+            <option value="">📂 Todos los Tipos</option>
+          </select>
+        </div>
+      </div>
+
       <!-- KPIs Principales -->
       <div id="kpis" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
 
@@ -83,41 +77,72 @@
       </div>
     </div>
 
-    <!-- PANTALLA 2: EJECUCIÓN DE MEDIOS (Tabla y Gráfico Lado a Lado - Estilo Claro) -->
-    <div id="sectionMedios" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- PANTALLA 2: EJECUCIÓN DE MEDIOS (Filtro Automático por "Ejecución de Medios") -->
+    <div id="sectionMedios" class="hidden space-y-6">
       
-      <!-- IZQUIERDA: Tabla Pivote por Marcas -->
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-        <div class="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
-          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-            <span class="w-3 h-3 rounded-full bg-[#e11d48]"></span>
-            Pivote de Marcas y % Cumplimiento
-          </h2>
-          <span class="text-xs text-slate-400 font-medium">* Clic para filtrar gráfico</span>
+      <!-- Filtros Exclusivos de Ejecución de Medios (SIN Selector de Centro de Costos) -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Buscador por Marca</label>
+          <input type="text" id="searchMedios" placeholder="🔍 Buscar marca..." 
+            class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
         </div>
-        <div class="overflow-x-auto max-h-[500px]">
-          <table class="w-full text-left text-sm">
-            <thead class="sticky top-0 bg-[#e11d48] text-white uppercase text-xs font-bold tracking-wider">
-              <tr>
-                <th class="px-4 py-3 border-r border-rose-500">Marcas</th>
-                <th class="px-4 py-3 text-right border-r border-rose-500">Ventas 2026</th>
-                <th class="px-4 py-3 text-right border-r border-rose-500">Ventas 2025</th>
-                <th class="px-4 py-3 text-right border-r border-rose-500">Proyección 2026</th>
-                <th class="px-4 py-3 text-right">% Cumpl.</th>
-              </tr>
-            </thead>
-            <tbody id="pivote-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
-          </table>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mes</label>
+          <select id="filterMesMedios" class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
+            <option value="">🗓️ Todos los Meses</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <button onclick="resetMediosFilters()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold p-2.5 rounded-xl transition text-sm border border-slate-200">
+            🔄 Limpiar Filtros
+          </button>
         </div>
       </div>
 
-      <!-- DERECHA: Gráfico de Barras por C. Costos / Meses -->
-      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-base font-bold text-slate-800">Ventas por C. Costos</h2>
-          <span class="text-xs font-medium text-slate-400">Barras: 2026/2025 | Línea: Proyección</span>
+      <!-- Indicador de Filtro de Marca Activo -->
+      <div id="activeFilterBadge" class="hidden bg-rose-50 border border-rose-200 text-[#e11d48] px-4 py-2 rounded-xl text-xs font-semibold flex justify-between items-center">
+        <span id="activeFilterText">Filtro aplicado por Marca: UHE</span>
+        <button onclick="resetMarcaFilter()" class="font-bold underline hover:text-rose-800">Quitar filtro de marca</button>
+      </div>
+
+      <!-- Vista Lado a Lado: Tabla Pivote y Gráfica de Medios -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- IZQUIERDA: Tabla Pivote por Marcas -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+          <div class="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+            <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-[#e11d48]"></span>
+              Pivote de Marcas (% Cumplimiento)
+            </h2>
+            <span class="text-xs text-slate-400 font-medium">* Clic para filtrar gráfico</span>
+          </div>
+          <div class="overflow-x-auto max-h-[500px]">
+            <table class="w-full text-left text-sm">
+              <thead class="sticky top-0 bg-[#e11d48] text-white uppercase text-xs font-bold tracking-wider">
+                <tr>
+                  <th class="px-4 py-3 border-r border-rose-500">Marcas</th>
+                  <th class="px-4 py-3 text-right border-r border-rose-500">Ventas 2026</th>
+                  <th class="px-4 py-3 text-right border-r border-rose-500">Ventas 2025</th>
+                  <th class="px-4 py-3 text-right border-r border-rose-500">Proyección 2026</th>
+                  <th class="px-4 py-3 text-right">% Cumpl.</th>
+                </tr>
+              </thead>
+              <tbody id="pivote-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
+            </table>
+          </div>
         </div>
-        <div class="h-[420px]"><canvas id="chartComparativoMedios"></canvas></div>
+
+        <!-- DERECHA: Gráfico de Barras / Líneas filtrado automáticamente -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-base font-bold text-slate-800">Ventas por C. Costos</h2>
+            <span class="text-xs font-medium text-slate-400">Barras: 2026/2025 | Línea: Proyección</span>
+          </div>
+          <div class="h-[420px]"><canvas id="chartComparativoMedios"></canvas></div>
+        </div>
+
       </div>
 
     </div>
@@ -187,13 +212,15 @@
     }
 
     function populateFilters(data) {
-      const selectMes = document.getElementById('filterMes');
-      const selectCC = document.getElementById('filterCC');
-      const selectTipo = document.getElementById('filterTipo');
+      const selectMesMain = document.getElementById('filterMesMain');
+      const selectMesMedios = document.getElementById('filterMesMedios');
+      const selectCCMain = document.getElementById('filterCCMain');
+      const selectTipoMain = document.getElementById('filterTipoMain');
 
-      selectMes.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
-      selectCC.innerHTML = '<option value="">🏢 Todos los Centros de Costos</option>';
-      selectTipo.innerHTML = '<option value="">📂 Todos los Tipos</option>';
+      selectMesMain.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
+      selectMesMedios.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
+      selectCCMain.innerHTML = '<option value="">🏢 Todos los Centros de Costos</option>';
+      selectTipoMain.innerHTML = '<option value="">📂 Todos los Tipos</option>';
 
       let mesesUnicos = [...new Set(data.map(r => getKey(r, "Mes")).filter(Boolean))];
       mesesUnicos.sort((a, b) => {
@@ -207,46 +234,62 @@
       const tiposUnicos = [...new Set(data.map(r => getKey(r, "Tipo") || getKey(r, "Año")).filter(Boolean))];
 
       mesesUnicos.forEach(mes => {
-        const option = document.createElement('option');
-        option.value = mes;
-        option.textContent = mes;
-        selectMes.appendChild(option);
+        const opt1 = document.createElement('option');
+        opt1.value = mes; opt1.textContent = mes;
+        selectMesMain.appendChild(opt1);
+
+        const opt2 = document.createElement('option');
+        opt2.value = mes; opt2.textContent = mes;
+        selectMesMedios.appendChild(opt2);
       });
 
       ccUnicos.forEach(cc => {
         const option = document.createElement('option');
-        option.value = cc;
-        option.textContent = cc;
-        selectCC.appendChild(option);
+        option.value = cc; option.textContent = cc;
+        selectCCMain.appendChild(option);
       });
 
       tiposUnicos.forEach(tipo => {
         const option = document.createElement('option');
-        option.value = tipo;
-        option.textContent = tipo;
-        selectTipo.appendChild(option);
+        option.value = tipo; option.textContent = tipo;
+        selectTipoMain.appendChild(option);
       });
     }
 
-    function getFilteredData() {
-      const searchTerm = document.getElementById('search').value.toLowerCase();
-      const selectedMes = document.getElementById('filterMes').value;
-      const selectedCC = document.getElementById('filterCC').value;
-      const selectedTipo = document.getElementById('filterTipo').value;
+    // Datos filtrados para Visión General
+    function getFilteredDataMain() {
+      const searchTerm = document.getElementById('searchMain').value.toLowerCase();
+      const selectedMes = document.getElementById('filterMesMain').value;
+      const selectedCC = document.getElementById('filterCCMain').value;
+      const selectedTipo = document.getElementById('filterTipoMain').value;
 
       return globalData.filter(row => {
         const matchesSearch = Object.values(row).some(val => String(val).toLowerCase().includes(searchTerm));
         const rowMes = getKey(row, "Mes");
         const rowCC = getKey(row, "Centro de Costos") || getKey(row, "Centro");
         const rowTipo = getKey(row, "Tipo") || getKey(row, "Año");
-        const rowMarca = getKey(row, "Marca");
 
+        return matchesSearch && (!selectedMes || rowMes === selectedMes) && (!selectedCC || rowCC === selectedCC) && (!selectedTipo || rowTipo === selectedTipo);
+      });
+    }
+
+    // Datos filtrados AUTOMÁTICAMENTE para Ejecución de Medios
+    function getFilteredDataMedios() {
+      const searchTerm = document.getElementById('searchMedios').value.toLowerCase();
+      const selectedMes = document.getElementById('filterMesMedios').value;
+
+      return globalData.filter(row => {
+        const rowCC = getKey(row, "Centro de Costos") || getKey(row, "Centro");
+        const rowMarca = getKey(row, "Marca");
+        const rowMes = getKey(row, "Mes");
+
+        // Filtro FIJO: Solo "Ejecución de Medios"
+        const matchesMediosCC = rowCC.toLowerCase().includes("ejecuci") || rowCC.toLowerCase().includes("medios");
+        const matchesSearch = !searchTerm || rowMarca.toLowerCase().includes(searchTerm);
         const matchesMes = !selectedMes || rowMes === selectedMes;
-        const matchesCC = !selectedCC || rowCC === selectedCC;
-        const matchesTipo = !selectedTipo || rowTipo === selectedTipo;
         const matchesMarca = !selectedMarca || rowMarca.toLowerCase() === selectedMarca.toLowerCase();
 
-        return matchesSearch && matchesMes && matchesCC && matchesTipo && matchesMarca;
+        return matchesMediosCC && matchesSearch && matchesMes && matchesMarca;
       });
     }
 
@@ -287,15 +330,21 @@
       renderDashboard();
     }
 
-    function renderDashboard() {
-      const data = getFilteredData();
-      renderKPIs(data);
-      renderPivoteMarcas(globalData);
+    function resetMediosFilters() {
+      document.getElementById('searchMedios').value = "";
+      document.getElementById('filterMesMedios').value = "";
+      resetMarcaFilter();
+    }
 
+    function renderDashboard() {
       if (currentSection === 'ALL') {
-        renderChartMain(data);
+        const dataMain = getFilteredDataMain();
+        renderKPIs(dataMain);
+        renderChartMain(dataMain);
       } else {
-        renderChartMedios(data);
+        const dataMedios = getFilteredDataMedios();
+        renderPivoteMarcas(dataMedios);
+        renderChartMedios(dataMedios);
       }
     }
 
@@ -325,14 +374,11 @@
       `;
     }
 
-    function renderPivoteMarcas(allData) {
+    function renderPivoteMarcas(mediosData) {
       const marcasMap = {};
-      const searchTerm = document.getElementById('search').value.toLowerCase();
 
-      allData.forEach(row => {
+      mediosData.forEach(row => {
         const marca = getKey(row, "Marca") || "Sin Marca";
-        if (searchTerm && !marca.toLowerCase().includes(searchTerm)) return;
-
         const tipo = (getKey(row, "Tipo") || getKey(row, "Año") || "").toLowerCase();
         const monto = parseMonto(row[montoKey]);
 
@@ -440,11 +486,15 @@
       });
     }
 
-    // Escuchadores de eventos
-    document.getElementById('search').addEventListener('input', renderDashboard);
-    document.getElementById('filterMes').addEventListener('change', renderDashboard);
-    document.getElementById('filterCC').addEventListener('change', renderDashboard);
-    document.getElementById('filterTipo').addEventListener('change', renderDashboard);
+    // Escuchadores de eventos para Visión General
+    document.getElementById('searchMain').addEventListener('input', renderDashboard);
+    document.getElementById('filterMesMain').addEventListener('change', renderDashboard);
+    document.getElementById('filterCCMain').addEventListener('change', renderDashboard);
+    document.getElementById('filterTipoMain').addEventListener('change', renderDashboard);
+
+    // Escuchadores de eventos para Ejecución de Medios
+    document.getElementById('searchMedios').addEventListener('input', renderDashboard);
+    document.getElementById('filterMesMedios').addEventListener('change', renderDashboard);
   </script>
 </body>
 </html>
