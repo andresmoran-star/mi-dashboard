@@ -93,15 +93,31 @@
       }
     });
 
-    function cleanNumber(val) {
+    // Función optimizada para limpiar formatos de números de Google Sheets
+    function parseMonto(val) {
       if (!val) return 0;
-      let clean = String(val).replace(/[^0-9.-]+/g, "");
-      return parseFloat(clean) || 0;
+      let str = String(val).trim();
+      
+      // Remover símbolos de moneda y caracteres no numéricos excepto comas, puntos y signo menos
+      str = str.replace(/[^0-9.,-]/g, "");
+      
+      // Manejar formato español con comas como decimales (ej: 1.250,50 -> 1250.50)
+      if (str.includes(',') && str.includes('.')) {
+        if (str.indexOf('.') < str.indexOf(',')) {
+          str = str.replace(/\./g, '').replace(',', '.');
+        } else {
+          str = str.replace(/,/g, '');
+        }
+      } else if (str.includes(',')) {
+        str = str.replace(',', '.');
+      }
+
+      return parseFloat(str) || 0;
     }
 
     function renderDashboard(data) {
-      // 1. Cálculos KPIs
-      const totalMonto = data.reduce((sum, row) => sum + cleanNumber(row["Monto"]), 0);
+      // 1. Métricas KPIs
+      const totalMonto = data.reduce((sum, row) => sum + parseMonto(row["Monto"]), 0);
       const totalRegistros = data.length;
       const promedio = totalRegistros > 0 ? (totalMonto / totalRegistros) : 0;
       const clientesUnicos = new Set(data.map(r => r["Cliente"]).filter(Boolean)).size;
@@ -109,11 +125,11 @@
       document.getElementById('kpis').innerHTML = `
         <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
           <p class="text-xs text-slate-400 uppercase font-semibold">Monto Total</p>
-          <p class="text-3xl font-bold text-emerald-400 mt-2">$${totalMonto.toLocaleString('es-ES', {minimumFractionDigits: 2})}</p>
+          <p class="text-3xl font-bold text-emerald-400 mt-2">$${totalMonto.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
         </div>
         <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
           <p class="text-xs text-slate-400 uppercase font-semibold">Promedio por Registro</p>
-          <p class="text-3xl font-bold text-blue-400 mt-2">$${promedio.toLocaleString('es-ES', {minimumFractionDigits: 2})}</p>
+          <p class="text-3xl font-bold text-blue-400 mt-2">$${promedio.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
         </div>
         <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
           <p class="text-xs text-slate-400 uppercase font-semibold">Total Clientes</p>
@@ -142,21 +158,19 @@
           <td class="px-6 py-4">${row["Marca"] || '-'}</td>
           <td class="px-6 py-4">${row["Grupo"] || '-'}</td>
           <td class="px-6 py-4">${row["Mes"] || '-'}</td>
-          <td class="px-6 py-4 text-right font-bold text-emerald-400">$${cleanNumber(row["Monto"]).toLocaleString('es-ES', {minimumFractionDigits: 2})}</td>
+          <td class="px-6 py-4 text-right font-bold text-emerald-400">$${parseMonto(row["Monto"]).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
         </tr>
       `).join('');
     }
 
     function renderCharts(data) {
-      // Agrupar Monto por Mes
       const porMes = {};
-      // Agrupar Monto por Marca
       const porMarca = {};
 
       data.forEach(row => {
         const mes = row["Mes"] || "Sin Mes";
         const marca = row["Marca"] || "Sin Marca";
-        const monto = cleanNumber(row["Monto"]);
+        const monto = parseMonto(row["Monto"]);
 
         porMes[mes] = (porMes[mes] || 0) + monto;
         porMarca[marca] = (porMarca[marca] || 0) + monto;
