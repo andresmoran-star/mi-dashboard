@@ -145,14 +145,23 @@
 
       </div>
 
-      <!-- NUEVA SECCIÓN: DESGROSE DE VENTAS POR MEDIO (Google, Meta, TikTok, etc.) -->
-      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div class="flex justify-between items-center mb-4">
-          <h2 id="titleDesgloseMedios" class="text-base font-bold text-slate-800 flex items-center gap-2">
-            📢 Distribución de Ventas por Medio (Google, Meta, TikTok, etc.)
-          </h2>
-          <span class="text-xs text-slate-400 font-medium">Suma de Ventas por Canal publicitario</span>
+      <!-- SECCIÓN: DESGLOSE POR MEDIO (EXCLUSIVO VENTAS 2026) -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
+          <div>
+            <h2 id="titleDesgloseMedios" class="text-base font-bold text-slate-800 flex items-center gap-2">
+              📢 Ventas por Medio 2026 (Google, Meta, TikTok, etc.)
+            </h2>
+            <p class="text-xs text-slate-400 font-medium">Información exclusiva de Ventas Reales Año 2026</p>
+          </div>
+          
+          <!-- KPI TOTAL VENTAS 2026 EN MEDIOS -->
+          <div class="bg-rose-50 border border-rose-200 text-[#e11d48] px-4 py-2 rounded-xl flex items-center gap-3">
+            <span class="text-xs font-bold uppercase tracking-wider">Total Ventas 2026:</span>
+            <span id="totalVentasMedios2026" class="text-xl font-extrabold">$0.00</span>
+          </div>
         </div>
+
         <div class="h-72"><canvas id="chartDesgloseMedios"></canvas></div>
       </div>
 
@@ -330,14 +339,14 @@
       selectedMarca = marca;
       document.getElementById('activeFilterBadge').classList.remove('hidden');
       document.getElementById('activeFilterText').innerText = `Filtro aplicado por Marca: ${marca}`;
-      document.getElementById('titleDesgloseMedios').innerText = `📢 Desglose por Medio para la Marca: ${marca}`;
+      document.getElementById('titleDesgloseMedios').innerText = `📢 Ventas por Medio 2026 - Marca: ${marca}`;
       renderDashboard();
     }
 
     function resetMarcaFilter() {
       selectedMarca = "";
       document.getElementById('activeFilterBadge').classList.add('hidden');
-      document.getElementById('titleDesgloseMedios').innerText = `📢 Distribución de Ventas por Medio (Todas las Marcas)`;
+      document.getElementById('titleDesgloseMedios').innerText = `📢 Ventas por Medio 2026 (Google, Meta, TikTok, etc.)`;
       renderDashboard();
     }
 
@@ -356,7 +365,7 @@
         const dataMedios = getFilteredDataMedios();
         renderPivoteMarcas(dataMedios);
         renderChartMedios(dataMedios);
-        renderChartDesgloseMedios(dataMedios);
+        renderChartDesgloseMedios2026(dataMedios);
       }
     }
 
@@ -498,15 +507,26 @@
       });
     }
 
-    // NUEVA FUNCIÓN: RENDERIZAR DESGLOSE POR MEDIO (Google, Meta, TikTok, etc.)
-    function renderChartDesgloseMedios(data) {
+    // DESGLOSE EXCLUSIVO DE VENTAS 2026 POR MEDIO Y TOTALIZADO
+    function renderChartDesgloseMedios2026(data) {
       const mediosMap = {};
+      let totalVentas2026 = 0;
 
       data.forEach(row => {
-        const medio = getKey(row, "Medio") || "Sin Especificar";
-        const monto = parseMonto(row[montoKey]);
-        mediosMap[medio] = (mediosMap[medio] || 0) + monto;
+        const tipo = (getKey(row, "Tipo") || getKey(row, "Año") || "").toLowerCase();
+        
+        // FILTRO ESTRICTO: Solo sumar registros de VENTAS 2026 (sin proyecciones ni 2025)
+        if (tipo.includes("2026") && !tipo.includes("proy") && !tipo.includes("proyección") && !tipo.includes("proyeccion")) {
+          const medio = getKey(row, "Medio") || "Sin Especificar";
+          const monto = parseMonto(row[montoKey]);
+          
+          mediosMap[medio] = (mediosMap[medio] || 0) + monto;
+          totalVentas2026 += monto;
+        }
       });
+
+      // Actualizar tarjeta del Total de Ventas 2026 en Medios
+      document.getElementById('totalVentasMedios2026').innerText = `$${totalVentas2026.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
       const labels = Object.keys(mediosMap);
       const values = Object.values(mediosMap);
@@ -517,10 +537,10 @@
       chartDesgloseInstance = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: labels,
+          labels: labels.length > 0 ? labels : ['Sin Datos 2026'],
           datasets: [{
-            label: 'Monto en Medios ($)',
-            data: values,
+            label: 'Ventas 2026 ($)',
+            data: values.length > 0 ? values : [0],
             backgroundColor: ['#e11d48', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'],
             borderRadius: 6
           }]
