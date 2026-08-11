@@ -77,10 +77,10 @@
       </div>
     </div>
 
-    <!-- PANTALLA 2: EJECUCIÓN DE MEDIOS (Filtro Automático por "Ejecución de Medios") -->
+    <!-- PANTALLA 2: EJECUCIÓN DE MEDIOS (Filtro Automático) -->
     <div id="sectionMedios" class="hidden space-y-6">
       
-      <!-- Filtros Exclusivos de Ejecución de Medios (SIN Selector de Centro de Costos) -->
+      <!-- Filtros Exclusivos de Ejecución de Medios -->
       <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
           <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Buscador por Marca</label>
@@ -102,11 +102,11 @@
 
       <!-- Indicador de Filtro de Marca Activo -->
       <div id="activeFilterBadge" class="hidden bg-rose-50 border border-rose-200 text-[#e11d48] px-4 py-2 rounded-xl text-xs font-semibold flex justify-between items-center">
-        <span id="activeFilterText">Filtro aplicado por Marca: UHE</span>
+        <span id="activeFilterText">Filtro aplicado por Marca: Todos</span>
         <button onclick="resetMarcaFilter()" class="font-bold underline hover:text-rose-800">Quitar filtro de marca</button>
       </div>
 
-      <!-- Vista Lado a Lado: Tabla Pivote y Gráfica de Medios -->
+      <!-- Vista Lado a Lado: Tabla Pivote y Gráfica Principal -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         <!-- IZQUIERDA: Tabla Pivote por Marcas -->
@@ -116,7 +116,7 @@
               <span class="w-3 h-3 rounded-full bg-[#e11d48]"></span>
               Pivote de Marcas (% Cumplimiento)
             </h2>
-            <span class="text-xs text-slate-400 font-medium">* Clic para filtrar gráfico</span>
+            <span class="text-xs text-slate-400 font-medium">* Clic para ver desglose de Medios</span>
           </div>
           <div class="overflow-x-auto max-h-[500px]">
             <table class="w-full text-left text-sm">
@@ -134,7 +134,7 @@
           </div>
         </div>
 
-        <!-- DERECHA: Gráfico de Barras / Líneas filtrado automáticamente -->
+        <!-- DERECHA: Gráfico de Barras / Líneas Comparativo -->
         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-base font-bold text-slate-800">Ventas por C. Costos</h2>
@@ -143,6 +143,17 @@
           <div class="h-[420px]"><canvas id="chartComparativoMedios"></canvas></div>
         </div>
 
+      </div>
+
+      <!-- NUEVA SECCIÓN: DESGROSE DE VENTAS POR MEDIO (Google, Meta, TikTok, etc.) -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex justify-between items-center mb-4">
+          <h2 id="titleDesgloseMedios" class="text-base font-bold text-slate-800 flex items-center gap-2">
+            📢 Distribución de Ventas por Medio (Google, Meta, TikTok, etc.)
+          </h2>
+          <span class="text-xs text-slate-400 font-medium">Suma de Ventas por Canal publicitario</span>
+        </div>
+        <div class="h-72"><canvas id="chartDesgloseMedios"></canvas></div>
       </div>
 
     </div>
@@ -157,6 +168,7 @@
     let currentSection = "ALL";
     let chartMainInstance = null;
     let chartMediosInstance = null;
+    let chartDesgloseInstance = null;
 
     const MESES_ORDEN = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 
@@ -256,7 +268,6 @@
       });
     }
 
-    // Datos filtrados para Visión General
     function getFilteredDataMain() {
       const searchTerm = document.getElementById('searchMain').value.toLowerCase();
       const selectedMes = document.getElementById('filterMesMain').value;
@@ -273,7 +284,6 @@
       });
     }
 
-    // Datos filtrados AUTOMÁTICAMENTE para Ejecución de Medios
     function getFilteredDataMedios() {
       const searchTerm = document.getElementById('searchMedios').value.toLowerCase();
       const selectedMes = document.getElementById('filterMesMedios').value;
@@ -283,7 +293,6 @@
         const rowMarca = getKey(row, "Marca");
         const rowMes = getKey(row, "Mes");
 
-        // Filtro FIJO: Solo "Ejecución de Medios"
         const matchesMediosCC = rowCC.toLowerCase().includes("ejecuci") || rowCC.toLowerCase().includes("medios");
         const matchesSearch = !searchTerm || rowMarca.toLowerCase().includes(searchTerm);
         const matchesMes = !selectedMes || rowMes === selectedMes;
@@ -321,12 +330,14 @@
       selectedMarca = marca;
       document.getElementById('activeFilterBadge').classList.remove('hidden');
       document.getElementById('activeFilterText').innerText = `Filtro aplicado por Marca: ${marca}`;
+      document.getElementById('titleDesgloseMedios').innerText = `📢 Desglose por Medio para la Marca: ${marca}`;
       renderDashboard();
     }
 
     function resetMarcaFilter() {
       selectedMarca = "";
       document.getElementById('activeFilterBadge').classList.add('hidden');
+      document.getElementById('titleDesgloseMedios').innerText = `📢 Distribución de Ventas por Medio (Todas las Marcas)`;
       renderDashboard();
     }
 
@@ -345,6 +356,7 @@
         const dataMedios = getFilteredDataMedios();
         renderPivoteMarcas(dataMedios);
         renderChartMedios(dataMedios);
+        renderChartDesgloseMedios(dataMedios);
       }
     }
 
@@ -486,13 +498,59 @@
       });
     }
 
-    // Escuchadores de eventos para Visión General
+    // NUEVA FUNCIÓN: RENDERIZAR DESGLOSE POR MEDIO (Google, Meta, TikTok, etc.)
+    function renderChartDesgloseMedios(data) {
+      const mediosMap = {};
+
+      data.forEach(row => {
+        const medio = getKey(row, "Medio") || "Sin Especificar";
+        const monto = parseMonto(row[montoKey]);
+        mediosMap[medio] = (mediosMap[medio] || 0) + monto;
+      });
+
+      const labels = Object.keys(mediosMap);
+      const values = Object.values(mediosMap);
+
+      if (chartDesgloseInstance) chartDesgloseInstance.destroy();
+      const ctx = document.getElementById('chartDesgloseMedios').getContext('2d');
+      
+      chartDesgloseInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Monto en Medios ($)',
+            data: values,
+            backgroundColor: ['#e11d48', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: { ticks: { color: '#334155', font: { weight: 'bold' } }, grid: { display: false } },
+            y: { 
+              ticks: { 
+                color: '#64748b',
+                callback: function(value) { return '$' + value.toLocaleString('es-EC'); }
+              }, 
+              grid: { color: '#f1f5f9' } 
+            }
+          }
+        }
+      });
+    }
+
+    // Escuchadores de eventos
     document.getElementById('searchMain').addEventListener('input', renderDashboard);
     document.getElementById('filterMesMain').addEventListener('change', renderDashboard);
     document.getElementById('filterCCMain').addEventListener('change', renderDashboard);
     document.getElementById('filterTipoMain').addEventListener('change', renderDashboard);
 
-    // Escuchadores de eventos para Ejecución de Medios
     document.getElementById('searchMedios').addEventListener('input', renderDashboard);
     document.getElementById('filterMesMedios').addEventListener('change', renderDashboard);
   </script>
