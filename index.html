@@ -52,7 +52,7 @@
     <!-- Métricas Principales (KPIs) -->
     <div id="kpis" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
 
-    <!-- Gráfico Combinado Principal (Barras 2025 vs 2026 + Línea Proyección) -->
+    <!-- Gráfico Combinado Principal -->
     <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 shadow-xl">
       <h2 class="text-lg font-semibold text-slate-200 mb-4">📈 Comparativo Mensual: Real 2025 / 2026 (Barras) vs Proyección (Línea)</h2>
       <div class="h-80"><canvas id="chartComparativo"></canvas></div>
@@ -92,6 +92,8 @@
     let chartComparativoInstance = null;
     let chartMarcaInstance = null;
     let chartTopClientesInstance = null;
+
+    const MESES_ORDEN = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 
     Papa.parse(CSV_URL, {
       download: true,
@@ -141,7 +143,7 @@
     function getKey(row, searchName) {
       const keys = Object.keys(row);
       const matchedKey = keys.find(k => k.trim().toLowerCase().includes(searchName.toLowerCase()));
-      return matchedKey ? row[matchedKey] : row[searchName];
+      return matchedKey ? String(row[matchedKey]).trim() : String(row[searchName] || '').trim();
     }
 
     function populateFilters(data) {
@@ -149,7 +151,21 @@
       const selectTipo = document.getElementById('filterTipo');
       const selectCC = document.getElementById('filterCC');
 
-      const mesesUnicos = [...new Set(data.map(r => getKey(r, "Mes")).filter(Boolean))];
+      // Limpiar opciones previas manteniendo la primera por defecto
+      selectMes.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
+      selectTipo.innerHTML = '<option value="">📂 Todos los Tipos</option>';
+      selectCC.innerHTML = '<option value="">🏢 Todos los Centros de Costos</option>';
+
+      let mesesUnicos = [...new Set(data.map(r => getKey(r, "Mes")).filter(Boolean))];
+      
+      // Ordenar meses cronológicamente
+      mesesUnicos.sort((a, b) => {
+        let idxA = MESES_ORDEN.findIndex(m => a.toLowerCase().includes(m));
+        let idxB = MESES_ORDEN.findIndex(m => b.toLowerCase().includes(m));
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        return a.localeCompare(b);
+      });
+
       const tiposUnicos = [...new Set(data.map(r => getKey(r, "Tipo") || getKey(r, "Año")).filter(Boolean))];
       const ccUnicos = [...new Set(data.map(r => getKey(r, "Centro de Costos") || getKey(r, "Centro")).filter(Boolean))];
 
@@ -252,9 +268,16 @@
     }
 
     function renderCharts(data) {
-      const meses = [...new Set(globalData.map(r => getKey(r, "Mes")).filter(Boolean))];
+      // Extraer y ordenar todos los meses presentes en los datos
+      let meses = [...new Set(globalData.map(r => getKey(r, "Mes")).filter(Boolean))];
+      meses.sort((a, b) => {
+        let idxA = MESES_ORDEN.findIndex(m => a.toLowerCase().includes(m));
+        let idxB = MESES_ORDEN.findIndex(m => b.toLowerCase().includes(m));
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        return a.localeCompare(b);
+      });
 
-      // Separación de montos por Tipo/Año para el gráfico mixto
+      // Extraer datos por mes y por tipo/año
       const data2025 = meses.map(mes => {
         return data
           .filter(r => getKey(r, "Mes") === mes && (getKey(r, "Tipo") === "2025" || getKey(r, "Año") === "2025"))
@@ -276,7 +299,7 @@
           .reduce((sum, r) => sum + parseMonto(r[montoKey]), 0);
       });
 
-      // 1. Renderizar Gráfico Combinado (Barras 2025/2026 + Línea Proyección)
+      // 1. Gráfico Combinado
       if (chartComparativoInstance) chartComparativoInstance.destroy();
       const ctxComp = document.getElementById('chartComparativo').getContext('2d');
       chartComparativoInstance = new Chart(ctxComp, {
@@ -288,19 +311,19 @@
               type: 'bar',
               label: 'Ventas 2025',
               data: data2025,
-              backgroundColor: '#3b82f6' // Azul
+              backgroundColor: '#3b82f6'
             },
             {
               type: 'bar',
               label: 'Ventas 2026',
               data: data2026,
-              backgroundColor: '#10b981' // Verde
+              backgroundColor: '#10b981'
             },
             {
               type: 'line',
               label: 'Proyección 2026',
               data: dataProy,
-              borderColor: '#f59e0b', // Amarillo / Naranja
+              borderColor: '#f59e0b',
               backgroundColor: '#f59e0b',
               borderWidth: 3,
               fill: false,
@@ -373,7 +396,7 @@
       });
     }
 
-    // Eventos de interacción
+    // Eventos
     document.getElementById('search').addEventListener('input', () => renderDashboard(getFilteredData()));
     document.getElementById('filterMes').addEventListener('change', () => renderDashboard(getFilteredData()));
     document.getElementById('filterTipo').addEventListener('change', () => renderDashboard(getFilteredData()));
