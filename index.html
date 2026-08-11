@@ -50,17 +50,7 @@
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-left text-sm text-slate-300">
-          <thead class="bg-slate-900/50 text-slate-400 uppercase text-xs border-b border-slate-700">
-            <tr>
-              <th class="px-6 py-4">Centro de Costos</th>
-              <th class="px-6 py-4">Cliente</th>
-              <th class="px-6 py-4">Medio</th>
-              <th class="px-6 py-4">Marca</th>
-              <th class="px-6 py-4">Grupo</th>
-              <th class="px-6 py-4">Mes</th>
-              <th class="px-6 py-4 text-right">Monto</th>
-            </tr>
-          </thead>
+          <thead class="bg-slate-900/50 text-slate-400 uppercase text-xs border-b border-slate-700" id="table-head"></thead>
           <tbody class="divide-y divide-slate-700/50" id="table-body"></tbody>
         </table>
       </div>
@@ -71,6 +61,7 @@
   <script>
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8yeQyrFEH3B94cy7Ov4Gf74x7l-rdDC1Uybt8qwfWsGS-n5y2R0bpyoMTJwcO9oXAdc6_xpqya5HC/pub?gid=347166102&single=true&output=csv";
     let globalData = [];
+    let montoKey = ""; // Almacenará la clave exacta del campo Monto
     let chartMesInstance = null;
     let chartMarcaInstance = null;
 
@@ -86,6 +77,10 @@
           return;
         }
 
+        // Buscar automáticamente cuál clave del objeto corresponde al "Monto"
+        const firstRowKeys = Object.keys(globalData[0]);
+        montoKey = firstRowKeys.find(k => k.trim().toLowerCase().includes("monto")) || "Monto";
+
         document.getElementById('status').innerText = "🟢 Conectado a Google Sheets";
         document.getElementById('status').className = "bg-emerald-500/10 text-emerald-400 px-4 py-2 rounded-lg border border-emerald-500/20 text-sm";
 
@@ -93,17 +88,21 @@
       }
     });
 
-    // Función optimizada para limpiar formatos de números de Google Sheets
+    // Función ultrasensible para extraer cualquier número
     function parseMonto(val) {
-      if (!val) return 0;
+      if (val === null || val === undefined) return 0;
       let str = String(val).trim();
       
-      // Remover símbolos de moneda y caracteres no numéricos excepto comas, puntos y signo menos
-      str = str.replace(/[^0-9.,-]/g, "");
+      // Si el valor está entre paréntesis como (100), es negativo
+      let isNegative = str.includes('-') || (str.startsWith('(') && str.endsWith(')'));
       
-      // Manejar formato español con comas como decimales (ej: 1.250,50 -> 1250.50)
+      // Conservar únicamente dígitos, comas y puntos
+      str = str.replace(/[^0-9.,]/g, "");
+      if (!str) return 0;
+
+      // Detectar formato con comas decimales o miles
       if (str.includes(',') && str.includes('.')) {
-        if (str.indexOf('.') < str.indexOf(',')) {
+        if (str.lastIndexOf(',') > str.lastIndexOf('.')) {
           str = str.replace(/\./g, '').replace(',', '.');
         } else {
           str = str.replace(/,/g, '');
@@ -112,15 +111,22 @@
         str = str.replace(',', '.');
       }
 
-      return parseFloat(str) || 0;
+      let num = parseFloat(str) || 0;
+      return isNegative ? -num : num;
+    }
+
+    function getKey(row, searchName) {
+      const keys = Object.keys(row);
+      const matchedKey = keys.find(k => k.trim().toLowerCase() === searchName.toLowerCase());
+      return matchedKey ? row[matchedKey] : row[searchName];
     }
 
     function renderDashboard(data) {
       // 1. Métricas KPIs
-      const totalMonto = data.reduce((sum, row) => sum + parseMonto(row["Monto"]), 0);
+      const totalMonto = data.reduce((sum, row) => sum + parseMonto(row[montoKey]), 0);
       const totalRegistros = data.length;
       const promedio = totalRegistros > 0 ? (totalMonto / totalRegistros) : 0;
-      const clientesUnicos = new Set(data.map(r => r["Cliente"]).filter(Boolean)).size;
+      const clientesUnicos = new Set(data.map(r => getKey(r, "Cliente")).filter(Boolean)).size;
 
       document.getElementById('kpis').innerHTML = `
         <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
@@ -141,24 +147,31 @@
         </div>
       `;
 
-      // 2. Renderizar Tabla
       renderTable(data);
-
-      // 3. Renderizar Gráficos
       renderCharts(data);
     }
 
     function renderTable(data) {
+      if (!data || data.length === 0) return;
+      const headers = Object.keys(data[0]);
+
+      // Generar encabezados dinámicos
+      document.getElementById('table-head').innerHTML = `
+        <tr>${headers.map(h => `<th class="px-6 py-4">${h}</th>`).join('')}</tr>
+      `;
+
+      // Generar filas dinámicas formateando automáticamente la columna Monto
       const tbody = document.getElementById('table-body');
       tbody.innerHTML = data.map(row => `
         <tr class="hover:bg-slate-700/30 transition">
-          <td class="px-6 py-4">${row["Centro de Costos"] || '-'}</td>
-          <td class="px-6 py-4 font-semibold text-white">${row["Cliente"] || '-'}</td>
-          <td class="px-6 py-4">${row["Medio"] || '-'}</td>
-          <td class="px-6 py-4">${row["Marca"] || '-'}</td>
-          <td class="px-6 py-4">${row["Grupo"] || '-'}</td>
-          <td class="px-6 py-4">${row["Mes"] || '-'}</td>
-          <td class="px-6 py-4 text-right font-bold text-emerald-400">$${parseMonto(row["Monto"]).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+          ${headers.map(h => {
+            let cellValue = row[h] || '-';
+            if (h === montoKey) {
+              const parsedVal = parseMonto(cellValue);
+              cellValue = `<span class="font-bold text-emerald-400">$${parsedVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>`;
+            }
+            return `<td class="px-6 py-4">${cellValue}</td>`;
+          }).join('')}
         </tr>
       `).join('');
     }
@@ -168,9 +181,9 @@
       const porMarca = {};
 
       data.forEach(row => {
-        const mes = row["Mes"] || "Sin Mes";
-        const marca = row["Marca"] || "Sin Marca";
-        const monto = parseMonto(row["Monto"]);
+        const mes = getKey(row, "Mes") || "Sin Mes";
+        const marca = getKey(row, "Marca") || "Sin Marca";
+        const monto = parseMonto(row[montoKey]);
 
         porMes[mes] = (porMes[mes] || 0) + monto;
         porMarca[marca] = (porMarca[marca] || 0) + monto;
@@ -192,7 +205,7 @@
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
       });
 
-      // Gráfico de Marcas (Donut)
+      // Gráfico de Marcas (Dona)
       if (chartMarcaInstance) chartMarcaInstance.destroy();
       const ctxMarca = document.getElementById('chartMarca').getContext('2d');
       chartMarcaInstance = new Chart(ctxMarca, {
