@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Panel de Control | Datos en Vivo</title>
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- PapaParse -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<!-- React -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --ink: #0F172A;
+    --ink-soft: #475569;
+    --paper: #F3F5F8;
+    --card: #FFFFFF;
+    --line: #E4E8EE;
+    --teal: #0F766E;
+    --teal-soft: #CCFBF1;
+    --amber: #D97706;
+    --amber-soft: #FEF3C7;
+    --indigo: #4338CA;
+    --indigo-soft: #E0E7FF;
+    --rose: #BE123C;
+    --rose-soft: #FFE4E6;
+  }
+  html,body{ background: var(--paper); font-family: 'Inter', system-ui, sans-serif; color: var(--ink); }
+  .font-mono-data{ font-family: 'JetBrains Mono', monospace; }
+  ::-webkit-scrollbar{ height: 8px; width: 8px; }
+  ::-webkit-scrollbar-track{ background: transparent; }
+  ::-webkit-scrollbar-thumb{ background: #CBD5E1; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover{ background: #94A3B8; }
+
+  @keyframes pulse-dot{
+    0%{ box-shadow: 0 0 0 0 rgba(15,118,110,0.45); }
+    70%{ box-shadow: 0 0 0 7px rgba(15,118,110,0); }
+    100%{ box-shadow: 0 0 0 0 rgba(15,118,110,0); }
+  }
+  .live-dot{ animation: pulse-dot 2s infinite; }
+
+  @keyframes fade-up{
+    from{ opacity:0; transform: translateY(6px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+  .fade-up{ animation: fade-up .45s ease both; }
+
+  .spin-slow{ animation: spin 1s linear infinite; }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+
+  table thead th{ position: sticky; top: 0; z-index: 5; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8yeQyrFEH3B94cy7Ov4Gf74x7l-rdDC1Uybt8qwfWsGS-n5y2R0bpyoMTJwcO9oXAdc6_xpqya5HC/pub?gid=347166102&single=true&output=csv";
+const AUTO_REFRESH_MS = 60000; // 60s
+const PAGE_SIZE = 10;
+
+// ---------- Icon helper (Lucide via data-lucide attributes) ----------
+function Icon({ name, className = "w-4 h-4", strokeWidth = 2 }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (ref.current && window.lucide) {
+      window.lucide.createIcons({ nodes: [ref.current] });
+    }
+  });
+  return <i ref={ref} data-lucide={name} className={className} style={{ strokeWidth }}></i>;
+}
+
+// ---------- Utility: format numbers ----------
+const fmtNumber = (n, opts = {}) => {
+  if (n === null || n === undefined || Number.isNaN(n)) return "—";
+  return new Intl.NumberFormat("es-ES", { maximumFractionDigits: 2, ...opts }).format(n);
+};
+
+// ---------- Utility: detect column types ----------
+function analyzeColumns(rows, fields) {
+  const numeric = [];
+  const categorical = [];
+  fields.forEach((f) => {
+    let numCount = 0, total = 0;
+    rows.forEach((r) => {
+      const v = r[f];
+      if (v === null || v === undefined || v === "") return;
+      total++;
+      if (typeof v === "number" && !Number.isNaN(v)) numCount++;
+    });
+    if (total > 0 && numCount / total >= 0.7) numeric.push(f);
+    else categorical.push(f);
+  });
+  return { numeric, categorical };
+}
+
+function buildKPIs(rows, fields) {
+  const { numeric, categorical } = analyzeColumns(rows, fields);
+  const kpis = [];
+
+  kpis.push({
+    key: "total_rows",
+    label: "Total de Registros",
+    value: fmtNumber(rows.length),
+    icon: "database",
+    accent: "teal",
+  });
+
+  if (numeric[0]) {
+    const col = numeric[0];
+    const sum = rows.reduce((a, r) => a + (typeof r[col] === "number" ? r[col] : 0), 0);
+    kpis.push({
+      key: "sum_" + col,
+      label: "Total " + col,
+      value: fmtNumber(sum),
+      icon: "trending-up",
+      accent: "indigo",
+    });
+  }
+
+  if (numeric[0]) {
+    const col = numeric[0];
+    const vals = rows.map((r) => r[col]).filter((v) => typeof v === "number");
+    const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+    kpis.push({
+      key: "avg_" + col,
+      label: "Promedio " + col,
+      value: fmtNumber(avg),
+      icon: "activity",
+      accent: "amber",
+    });
+  } else if (numeric[1]) {
+    const col = numeric[1];
+    const sum = rows.reduce((a, r) => a + (typeof r[col] === "number" ? r[col] : 0), 0);
+    kpis.push({
+      key: "sum2_" + col,
+      label: "Total " + col,
+      value: fmtNumber(sum),
+      icon: "activity",
+      accent: "amber",
+    });
+  }
+
+  if (categorical[0]) {
+    const col = categorical[0];
+    const unique = new Set(rows.map((r) => r[col]).filter((v) => v !== "" && v !== null && v !== undefined));
+    kpis.push({
+      key: "unique_" + col,
+      label: "Categorías Únicas (" + col + ")",
+      value: fmtNumber(unique.size),
+      icon: "layers",
+      accent: "rose",
+    });
+  } else if (numeric[2]) {
+    const col = numeric[2];
+    const vals = rows.map((r) => r[col]).filter((v) => typeof v === "number");
+    const max = vals.length ? Math.max(...vals) : 0;
+    kpis.push({
+      key: "max_" + col,
+      label: "Máximo " + col,
+      value: fmtNumber(max),
+      icon: "layers",
+      accent: "rose",
+    });
+  }
+
+  return kpis.slice(0, 4);
+}
+
+const ACCENTS = {
+  teal:   { text: "text-[--teal]",   bg: "bg-[--teal-soft]",   bar: "bg-[--teal]" },
+  indigo: { text: "text-[--indigo]", bg: "bg-[--indigo-soft]", bar: "bg-[--indigo]" },
+  amber:  { text: "text-[--amber]",  bg: "bg-[--amber-soft]",  bar: "bg-[--amber]" },
+  rose:   { text: "text-[--rose]",   bg: "bg-[--rose-soft]",   bar: "bg-[--rose]" },
+};
+
+function KpiCard({ kpi, index }) {
+  const a = ACCENTS[kpi.accent] || ACCENTS.teal;
+  return (
+    <div
+      className="fade-up relative bg-white rounded-2xl border border-[--line] p-5 shadow-sm overflow-hidden"
+      style={{ animationDelay: (index * 70) + "ms" }}
+    >
+      <div className={"absolute left-0 top-0 h-1 w-full " + a.bar}></div>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{kpi.label}</p>
+          <p className="font-mono-data text-2xl md:text-3xl font-bold text-slate-900 mt-2">{kpi.value}</p>
+        </div>
+        <div className={"rounded-xl p-2.5 " + a.bg}>
+          <Icon name={kpi.icon} className={"w-5 h-5 " + a.text} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Th({ label, sortKey, sortColumn, sortDir, onSort }) {
+  const active = sortColumn === sortKey;
+  return (
+    <th
+      onClick={() => onSort(sortKey)}
+      className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500 px-4 py-3 cursor-pointer select-none whitespace-nowrap border-b border-[--line] hover:text-slate-800 transition-colors"
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        <Icon
+          name={active ? (sortDir === "asc" ? "arrow-up" : "arrow-down") : "arrow-up-down"}
+          className={"w-3 h-3 " + (active ? "text-[--teal]" : "text-slate-300")}
+        />
+      </span>
+    </th>
+  );
+}
+
+function App() {
+  const [rows, setRows] = useState([]);
+  const [fields, setFields] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [sortColumn, setSortColumn] = useState(null);
+  const [sortDir, setSortDir] = useState("asc");
+  const [lastUpdated, setLastUpdated] = useState(null);
+
+  const fetchData = useCallback((isInitial) => {
+    if (isInitial) setLoading(true); else setRefreshing(true);
+    Papa.parse(CSV_URL, {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const cleanFields = (results.meta.fields || []).filter(Boolean);
+        const cleanRows = (results.data || []).filter((r) =>
+          cleanFields.some((f) => r[f] !== "" && r[f] !== null && r[f] !== undefined)
+        );
+        setFields(cleanFields);
+        setRows(cleanRows);
+        setError(null);
+        setLastUpdated(new Date());
+        setLoading(false);
+        setRefreshing(false);
+      },
+      error: (err) => {
+        setError(err.message || "No se pudo cargar el CSV.");
+        setLoading(false);
+        setRefreshing(false);
+      },
+    });
+  }, []);
+
+  useEffect(() => {
+    fetchData(true);
+    const interval = setInterval(() => fetchData(false), AUTO_REFRESH_MS);
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
+  useEffect(() => { setPage(1); }, [search]);
+
+  const kpis = useMemo(() => buildKPIs(rows, fields), [rows, fields]);
+
+  const filteredRows = useMemo(() => {
+    if (!search.trim()) return rows;
+    const q = search.toLowerCase();
+    return rows.filter((r) =>
+      fields.some((f) => String(r[f] ?? "").toLowerCase().includes(q))
+    );
+  }, [rows, fields, search]);
+
+  const sortedRows = useMemo(() => {
+    if (!sortColumn) return filteredRows;
+    const copy = [...filteredRows];
+    copy.sort((a, b) => {
+      const va = a[sortColumn], vb = b[sortColumn];
+      const na = typeof va === "number", nb = typeof vb === "number";
+      let cmp;
+      if (na && nb) cmp = va - vb;
+      else cmp = String(va ?? "").localeCompare(String(vb ?? ""), "es", { sensitivity: "base" });
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return copy;
+  }, [filteredRows, sortColumn, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedRows.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedRows = sortedRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const handleSort = (col) => {
+    if (sortColumn === col) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(col);
+      setSortDir("asc");
+    }
+  };
+
+  return (
+    <div className="min-h-screen">
+      {/* Header */}
+      <header className="bg-white border-b border-[--line] sticky top-0 z-20">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[--teal] flex items-center justify-center">
+              <Icon name="layout-dashboard" className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-slate-900 leading-tight">Panel de Control</h1>
+              <p className="text-xs text-slate-500">Datos sincronizados desde Google Sheets</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="live-dot absolute inline-flex h-full w-full rounded-full bg-[--teal]"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[--teal]"></span>
+              </span>
+              <span>
+                {lastUpdated
+                  ? "Actualizado " + lastUpdated.toLocaleTimeString("es-ES")
+                  : "Conectando…"}
+              </span>
+            </div>
+            <button
+              onClick={() => fetchData(false)}
+              disabled={loading || refreshing}
+              className="inline-flex items-center gap-2 rounded-lg border border-[--line] bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium px-3.5 py-2 transition-colors disabled:opacity-50"
+            >
+              <Icon name="refresh-cw" className={"w-4 h-4 " + (refreshing ? "spin-slow" : "")} />
+              <span className="hidden sm:inline">Actualizar</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-6 space-y-6">
+
+        {/* Error state */}
+        {error && (
+          <div className="fade-up flex items-start gap-3 bg-[--rose-soft] border border-rose-200 text-[--rose] rounded-xl p-4">
+            <Icon name="alert-triangle" className="w-5 h-5 mt-0.5 shrink-0" />
+            <div className="text-sm">
+              <p className="font-semibold">No se pudieron cargar los datos.</p>
+              <p className="opacity-80">{error}</p>
+            </div>
+            <button
+              onClick={() => fetchData(true)}
+              className="ml-auto text-sm font-semibold underline underline-offset-2 shrink-0"
+            >
+              Reintentar
+            </button>
+          </div>
+        )}
+
+        {/* Loading skeleton */}
+        {loading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-2xl border border-[--line] p-5 h-[104px] animate-pulse">
+                <div className="h-3 w-24 bg-slate-200 rounded mb-4"></div>
+                <div className="h-6 w-16 bg-slate-200 rounded"></div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loading && !error && (
+          <React.Fragment>
+            {/* KPIs */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {kpis.map((kpi, i) => <KpiCard key={kpi.key} kpi={kpi} index={i} />)}
+            </div>
+
+            {/* Table card */}
+            <div className="bg-white rounded-2xl border border-[--line] shadow-sm overflow-hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-b border-[--line]">
+                <div>
+                  <h2 className="font-semibold text-slate-900">Registro de Datos</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {fmtNumber(sortedRows.length)} de {fmtNumber(rows.length)} filas
+                  </p>
+                </div>
+                <div className="relative w-full sm:w-72">
+                  <Icon name="search" className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Buscar en la tabla…"
+                    className="w-full pl-9 pr-8 py-2 text-sm rounded-lg border border-[--line] bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[--teal]/30 focus:border-[--teal] transition-colors"
+                  />
+                  {search && (
+                    <button
+                      onClick={() => setSearch("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <Icon name="x" className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {fields.length === 0 ? (
+                <div className="p-10 text-center text-slate-500 text-sm">No hay columnas disponibles.</div>
+              ) : sortedRows.length === 0 ? (
+                <div className="p-10 text-center text-slate-500 text-sm">
+                  Sin resultados para “{search}”.
+                </div>
+              ) : (
+                <div className="overflow-x-auto max-h-[520px]">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr>
+                        {fields.map((f) => (
+                          <Th
+                            key={f}
+                            label={f}
+                            sortKey={f}
+                            sortColumn={sortColumn}
+                            sortDir={sortDir}
+                            onSort={handleSort}
+                          />
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedRows.map((row, idx) => (
+                        <tr
+                          key={idx}
+                          className={
+                            "border-b border-[--line] last:border-0 hover:bg-[--teal-soft]/40 transition-colors " +
+                            (idx % 2 === 1 ? "bg-slate-50/60" : "bg-white")
+                          }
+                        >
+                          {fields.map((f) => {
+                            const v = row[f];
+                            const isNum = typeof v === "number";
+                            return (
+                              <td
+                                key={f}
+                                className={
+                                  "px-4 py-2.5 whitespace-nowrap text-slate-700 " +
+                                  (isNum ? "font-mono-data text-right" : "")
+                                }
+                              >
+                                {v === null || v === undefined || v === "" ? "—" : isNum ? fmtNumber(v) : String(v)}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Pagination */}
+              {sortedRows.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-[--line] text-sm">
+                  <p className="text-slate-500 text-xs">
+                    Página <span className="font-semibold text-slate-700">{currentPage}</span> de{" "}
+                    <span className="font-semibold text-slate-700">{totalPages}</span>
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setPage(1)}
+                      disabled={currentPage === 1}
+                      className="p-1.5 rounded-lg border border-[--line] disabled:opacity-30 hover:bg-slate-50"
+                    >
+                      <Icon name="chevrons-left" className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="p-1.5 rounded-lg border border-[--line] disabled:opacity-30 hover:bg-slate-50"
+                    >
+                      <Icon name="chevron-left" className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="p-1.5 rounded-lg border border-[--line] disabled:opacity-30 hover:bg-slate-50"
+                    >
+                      <Icon name="chevron-right" className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                      className="p-1.5 rounded-lg border border-[--line] disabled:opacity-30 hover:bg-slate-50"
+                    >
+                      <Icon name="chevrons-right" className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </React.Fragment>
+        )}
+
+        <footer className="text-center text-xs text-slate-400 pt-2 pb-6">
+          Actualización automática cada {AUTO_REFRESH_MS / 1000}s · Fuente: Google Sheets (CSV publicado)
+        </footer>
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
