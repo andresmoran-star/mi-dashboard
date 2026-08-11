@@ -3,82 +3,124 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Resultados - XIX</title>
+  <title>Dashboard Ejecutivo - XIX</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .xix-bg-red { background-color: #e11d48; }
+    .xix-text-red { color: #e11d48; }
+    .xix-border-red { border-color: #e11d48; }
+  </style>
 </head>
-<body class="bg-[#0b0f19] text-white min-h-screen p-6 font-sans">
+<body class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-6">
   <div class="max-w-7xl mx-auto space-y-6">
     
-    <!-- Encabezado con Identidad XIX -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-5 gap-4">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#e11d48] to-[#ff3b30] flex items-center justify-center text-white font-black text-xl shadow-lg shadow-rose-900/30">
+    <!-- Encabezado Corporativo XIX -->
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#e11d48] to-[#ff3b30] flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-rose-200">
           X
         </div>
         <div>
-          <h1 class="text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#f43f5e] via-[#ff3b30] to-orange-400">
-            XIX · Dashboard de Resultados
-          </h1>
-          <p class="text-slate-400 text-sm">Consolidado: Ventas 2025 vs Ventas 2026 vs Proyección 2026</p>
+          <h1 class="text-2xl font-bold text-slate-900 tracking-tight">XIX · Dashboard de Resultados</h1>
+          <p class="text-slate-500 text-xs font-medium">Consolidado Ejecutivo de Ventas y Proyección</p>
         </div>
       </div>
-      <div id="status" class="bg-rose-950/40 text-rose-300 px-4 py-2 rounded-lg border border-rose-800/40 text-xs font-semibold animate-pulse">
+      
+      <!-- Navegación por Secciones / Botones -->
+      <div class="flex items-center gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200 text-xs font-semibold">
+        <button id="btnSectionAll" onclick="switchSection('ALL')" class="px-4 py-2 rounded-lg bg-white shadow-sm text-slate-800 transition">
+          📊 Visión General
+        </button>
+        <button id="btnSectionMedios" onclick="switchSection('MEDIOS')" class="px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition">
+          🎯 Ejecución de Medios
+        </button>
+      </div>
+
+      <div id="status" class="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold">
         ⏳ Cargando datos...
       </div>
     </div>
 
-    <!-- Filtros y Buscador -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- Barra de Filtros interactivos -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <div>
         <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Buscador general</label>
-        <input type="text" id="search" placeholder="🔍 Buscar por Cliente, Medio, Grupo..." 
-          class="w-full bg-[#161f30] border border-slate-800 text-white p-3 rounded-xl focus:outline-none focus:border-[#f43f5e] transition text-sm">
+        <input type="text" id="search" placeholder="🔍 Buscar por Cliente, Medio, Marca..." 
+          class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
       </div>
       <div>
         <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Centro de Costos</label>
-        <select id="filterCC" class="w-full bg-[#161f30] border border-slate-800 text-white p-3 rounded-xl focus:outline-none focus:border-[#f43f5e] transition text-sm">
+        <select id="filterCC" class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
           <option value="">🏢 Todos los Centros de Costos</option>
         </select>
       </div>
       <div>
         <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mes</label>
-        <select id="filterMes" class="w-full bg-[#161f30] border border-slate-800 text-white p-3 rounded-xl focus:outline-none focus:border-[#f43f5e] transition text-sm">
+        <select id="filterMes" class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
           <option value="">🗓️ Todos los Meses</option>
         </select>
       </div>
-      <div>
-        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Tipo / Año</label>
-        <select id="filterTipo" class="w-full bg-[#161f30] border border-slate-800 text-white p-3 rounded-xl focus:outline-none focus:border-[#f43f5e] transition text-sm">
-          <option value="">📂 Todos los Tipos</option>
-        </select>
+      <div class="flex items-end">
+        <button onclick="resetFilters()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold p-2.5 rounded-xl transition text-sm border border-slate-200">
+          🔄 Limpiar Filtros
+        </button>
       </div>
     </div>
 
-    <!-- Métricas Principales (KPIs con estética XIX) -->
-    <div id="kpis" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+    <!-- Indicador de filtro activo -->
+    <div id="activeFilterBadge" class="hidden bg-rose-50 border border-rose-200 text-[#e11d48] px-4 py-2 rounded-xl text-xs font-semibold flex justify-between items-center">
+      <span id="activeFilterText">Filtro aplicado por Marca: UHE</span>
+      <button onclick="resetMarcaFilter()" class="font-bold underline hover:text-rose-800">Quitar filtro</button>
+    </div>
 
-    <!-- Gráfico Combinado Principal (Único) -->
-    <div class="bg-[#141c2e] p-6 rounded-2xl border border-slate-800/80 shadow-2xl">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
-          <span class="inline-block w-3 h-3 rounded-full bg-[#f43f5e]"></span>
-          Comparativo Mensual: Real 2025 / 2026 (Barras) vs Proyección (Línea)
+    <!-- SECCIÓN: EJECUCIÓN DE MEDIOS / TABLA PIVOTE DE MARCAS Y CUMPLIMIENTO -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-[#e11d48]"></span>
+          Pivote de Marcas y % de Cumplimiento
         </h2>
+        <span class="text-xs text-slate-400 font-medium">* Haz clic en cualquier marca para filtrar el gráfico</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="bg-[#e11d48] text-white uppercase text-xs font-bold tracking-wider">
+              <th class="px-6 py-3.5 border-r border-rose-500">Marcas</th>
+              <th class="px-6 py-3.5 text-right border-r border-rose-500">Ventas 2026</th>
+              <th class="px-6 py-3.5 text-right border-r border-rose-500">Ventas 2025</th>
+              <th class="px-6 py-3.5 text-right border-r border-rose-500">Proyección 2026</th>
+              <th class="px-6 py-3.5 text-right">% Cumplimiento</th>
+            </tr>
+          </thead>
+          <tbody id="pivote-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- GRÁFICO COMPARATIVO POR MES Y CENTRO DE COSTOS (Barras 2026/2025 + Línea Proyección) -->
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-bold text-slate-800" id="chartTitle">
+          Ventas por C. Costos / Meses
+        </h2>
+        <span class="text-xs font-medium text-slate-400">📊 Barras: Ventas 2026 / 2025 | Línea: Proyección 2026</span>
       </div>
       <div class="h-96"><canvas id="chartComparativo"></canvas></div>
     </div>
 
-    <!-- Tabla Dinámica Consolidada -->
-    <div class="bg-[#141c2e] rounded-2xl border border-slate-800/80 overflow-hidden shadow-2xl">
-      <div class="p-5 border-b border-slate-800 flex justify-between items-center">
-        <h2 class="text-lg font-bold text-slate-100">Detalle de Registros Consolidados</h2>
+    <!-- DETALLE DE REGISTROS CONSOLIDADOS (Tabla Completa) -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="p-4 border-b border-slate-200 bg-slate-50/50">
+        <h2 class="text-base font-bold text-slate-800">Detalle de Registros Consolidados</h2>
       </div>
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-slate-300">
-          <thead class="bg-[#0b0f19] text-slate-400 uppercase text-xs border-b border-slate-800 tracking-wider" id="table-head"></thead>
-          <tbody class="divide-y divide-slate-800/60" id="table-body"></tbody>
+        <table class="w-full text-left text-sm text-slate-700">
+          <thead class="bg-slate-100 text-slate-600 uppercase text-xs font-bold border-b border-slate-200 tracking-wider" id="table-head"></thead>
+          <tbody class="divide-y divide-slate-100" id="table-body"></tbody>
         </table>
       </div>
     </div>
@@ -89,6 +131,8 @@
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8yeQyrFEH3B94cy7Ov4Gf74x7l-rdDC1Uybt8qwfWsGS-n5y2R0bpyoMTJwcO9oXAdc6_xpqya5HC/pub?gid=347166102&single=true&output=csv";
     let globalData = [];
     let montoKey = "";
+    let selectedMarca = "";
+    let currentSection = "ALL";
     let chartComparativoInstance = null;
 
     const MESES_ORDEN = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -109,10 +153,10 @@
         montoKey = firstRowKeys.find(k => k.trim().toLowerCase().includes("monto")) || "Monto";
 
         document.getElementById('status').innerText = "🟢 Conectado a Google Sheets";
-        document.getElementById('status').className = "bg-emerald-950/40 text-emerald-300 px-4 py-2 rounded-lg border border-emerald-800/40 text-xs font-semibold";
+        document.getElementById('status').className = "bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-200 text-xs font-semibold";
 
         populateFilters(globalData);
-        renderDashboard(globalData);
+        renderDashboard();
       }
     });
 
@@ -146,11 +190,9 @@
 
     function populateFilters(data) {
       const selectMes = document.getElementById('filterMes');
-      const selectTipo = document.getElementById('filterTipo');
       const selectCC = document.getElementById('filterCC');
 
       selectMes.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
-      selectTipo.innerHTML = '<option value="">📂 Todos los Tipos</option>';
       selectCC.innerHTML = '<option value="">🏢 Todos los Centros de Costos</option>';
 
       let mesesUnicos = [...new Set(data.map(r => getKey(r, "Mes")).filter(Boolean))];
@@ -161,7 +203,6 @@
         return a.localeCompare(b);
       });
 
-      const tiposUnicos = [...new Set(data.map(r => getKey(r, "Tipo") || getKey(r, "Año")).filter(Boolean))];
       const ccUnicos = [...new Set(data.map(r => getKey(r, "Centro de Costos") || getKey(r, "Centro")).filter(Boolean))];
 
       mesesUnicos.forEach(mes => {
@@ -169,13 +210,6 @@
         option.value = mes;
         option.textContent = mes;
         selectMes.appendChild(option);
-      });
-
-      tiposUnicos.forEach(tipo => {
-        const option = document.createElement('option');
-        option.value = tipo;
-        option.textContent = tipo;
-        selectTipo.appendChild(option);
       });
 
       ccUnicos.forEach(cc => {
@@ -189,74 +223,124 @@
     function getFilteredData() {
       const searchTerm = document.getElementById('search').value.toLowerCase();
       const selectedMes = document.getElementById('filterMes').value;
-      const selectedTipo = document.getElementById('filterTipo').value;
       const selectedCC = document.getElementById('filterCC').value;
 
       return globalData.filter(row => {
         const matchesSearch = Object.values(row).some(val => String(val).toLowerCase().includes(searchTerm));
         const rowMes = getKey(row, "Mes");
-        const rowTipo = getKey(row, "Tipo") || getKey(row, "Año");
         const rowCC = getKey(row, "Centro de Costos") || getKey(row, "Centro");
+        const rowMarca = getKey(row, "Marca");
 
         const matchesMes = !selectedMes || rowMes === selectedMes;
-        const matchesTipo = !selectedTipo || rowTipo === selectedTipo;
         const matchesCC = !selectedCC || rowCC === selectedCC;
+        const matchesMarca = !selectedMarca || rowMarca.toLowerCase() === selectedMarca.toLowerCase();
 
-        return matchesSearch && matchesMes && matchesTipo && matchesCC;
+        return matchesSearch && matchesMes && matchesCC && matchesMarca;
       });
     }
 
-    function renderDashboard(data) {
-      // 1. KPIs
-      const totalMonto = data.reduce((sum, row) => sum + parseMonto(row[montoKey]), 0);
-      const totalRegistros = data.length;
-      const promedio = totalRegistros > 0 ? (totalMonto / totalRegistros) : 0;
-      const clientesUnicos = new Set(data.map(r => getKey(r, "Cliente")).filter(Boolean)).size;
+    function switchSection(sec) {
+      currentSection = sec;
+      const btnAll = document.getElementById('btnSectionAll');
+      const btnMedios = document.getElementById('btnSectionMedios');
 
-      document.getElementById('kpis').innerHTML = `
-        <div class="bg-[#141c2e] p-5 rounded-2xl border border-slate-800/80 shadow-lg border-l-4 border-l-[#f43f5e]">
-          <p class="text-xs text-slate-400 uppercase font-bold tracking-wider">Monto Total</p>
-          <p class="text-3xl font-extrabold text-white mt-2">$${totalMonto.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-        </div>
-        <div class="bg-[#141c2e] p-5 rounded-2xl border border-slate-800/80 shadow-lg border-l-4 border-l-[#ff3b30]">
-          <p class="text-xs text-slate-400 uppercase font-bold tracking-wider">Promedio por Registro</p>
-          <p class="text-3xl font-extrabold text-rose-400 mt-2">$${promedio.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
-        </div>
-        <div class="bg-[#141c2e] p-5 rounded-2xl border border-slate-800/80 shadow-lg border-l-4 border-l-blue-500">
-          <p class="text-xs text-slate-400 uppercase font-bold tracking-wider">Total Clientes</p>
-          <p class="text-3xl font-extrabold text-blue-400 mt-2">${clientesUnicos}</p>
-        </div>
-        <div class="bg-[#141c2e] p-5 rounded-2xl border border-slate-800/80 shadow-lg border-l-4 border-l-amber-500">
-          <p class="text-xs text-slate-400 uppercase font-bold tracking-wider">Total Registros</p>
-          <p class="text-3xl font-extrabold text-amber-400 mt-2">${totalRegistros}</p>
-        </div>
-      `;
+      if (sec === 'MEDIOS') {
+        btnMedios.className = "px-4 py-2 rounded-lg bg-white shadow-sm text-slate-800 transition";
+        btnAll.className = "px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition";
+      } else {
+        btnAll.className = "px-4 py-2 rounded-lg bg-white shadow-sm text-slate-800 transition";
+        btnMedios.className = "px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition";
+      }
+      renderDashboard();
+    }
 
+    function filterByMarca(marca) {
+      selectedMarca = marca;
+      document.getElementById('activeFilterBadge').classList.remove('hidden');
+      document.getElementById('activeFilterText').innerText = `Filtro aplicado por Marca: ${marca}`;
+      renderDashboard();
+    }
+
+    function resetMarcaFilter() {
+      selectedMarca = "";
+      document.getElementById('activeFilterBadge').classList.add('hidden');
+      renderDashboard();
+    }
+
+    function resetFilters() {
+      document.getElementById('search').value = "";
+      document.getElementById('filterMes').value = "";
+      document.getElementById('filterCC').value = "";
+      resetMarcaFilter();
+    }
+
+    function renderDashboard() {
+      const data = getFilteredData();
+      renderPivoteMarcas(globalData); // Mantiene el pivote completo para seleccionar cualquier marca
       renderTable(data);
       renderCharts(data);
     }
 
+    function renderPivoteMarcas(allData) {
+      const marcasMap = {};
+
+      allData.forEach(row => {
+        const marca = getKey(row, "Marca") || "Sin Marca";
+        const tipo = (getKey(row, "Tipo") || getKey(row, "Año") || "").toLowerCase();
+        const monto = parseMonto(row[montoKey]);
+
+        if (!marcasMap[marca]) {
+          marcasMap[marca] = { v2026: 0, v2025: 0, proy2026: 0 };
+        }
+
+        if (tipo.includes("proy") || tipo.includes("proyección") || tipo.includes("proyeccion")) {
+          marcasMap[marca].proy2026 += monto;
+        } else if (tipo.includes("2026")) {
+          marcasMap[marca].v2026 += monto;
+        } else if (tipo.includes("2025")) {
+          marcasMap[marca].v2025 += monto;
+        }
+      });
+
+      const tbody = document.getElementById('pivote-body');
+      tbody.innerHTML = Object.entries(marcasMap).map(([marca, vals], idx) => {
+        const cumplimiento = vals.proy2026 > 0 ? Math.round((vals.v2026 / vals.proy2026) * 100) : 0;
+        const bgRow = idx % 2 === 0 ? "bg-white" : "bg-slate-50/60";
+        const activeClass = selectedMarca.toLowerCase() === marca.toLowerCase() ? "bg-rose-50 font-bold border-l-4 border-l-[#e11d48]" : "";
+
+        return `
+          <tr onclick="filterByMarca('${marca}')" class="${bgRow} ${activeClass} hover:bg-rose-50/80 cursor-pointer transition">
+            <td class="px-6 py-3.5 font-medium text-slate-800">${marca}</td>
+            <td class="px-6 py-3.5 text-right font-semibold text-slate-900">$${vals.v2026.toLocaleString('es-EC')}</td>
+            <td class="px-6 py-3.5 text-right text-slate-500">$${vals.v2025.toLocaleString('es-EC')}</td>
+            <td class="px-6 py-3.5 text-right text-slate-600">$${vals.proy2026.toLocaleString('es-EC')}</td>
+            <td class="px-6 py-3.5 text-right font-bold ${cumplimiento >= 100 ? 'text-emerald-600' : 'text-slate-700'}">${cumplimiento} %</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
     function renderTable(data) {
       if (!data || data.length === 0) {
-        document.getElementById('table-body').innerHTML = `<tr><td colspan="10" class="px-6 py-4 text-center text-slate-500">No hay registros que coincidan</td></tr>`;
+        document.getElementById('table-body').innerHTML = `<tr><td colspan="10" class="px-6 py-4 text-center text-slate-400">No hay registros que coincidan</td></tr>`;
         return;
       }
       const headers = Object.keys(data[0]);
 
       document.getElementById('table-head').innerHTML = `
-        <tr>${headers.map(h => `<th class="px-6 py-4 font-bold text-slate-400">${h}</th>`).join('')}</tr>
+        <tr>${headers.map(h => `<th class="px-6 py-3 text-slate-600">${h}</th>`).join('')}</tr>
       `;
 
       const tbody = document.getElementById('table-body');
-      tbody.innerHTML = data.map(row => `
-        <tr class="hover:bg-rose-950/10 transition">
+      tbody.innerHTML = data.map((row, i) => `
+        <tr class="${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-rose-50/40 transition">
           ${headers.map(h => {
             let cellValue = row[h] || '-';
             if (h === montoKey) {
               const parsedVal = parseMonto(cellValue);
-              cellValue = `<span class="font-extrabold text-[#f43f5e]">$${parsedVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>`;
+              cellValue = `<span class="font-bold text-[#e11d48]">$${parsedVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>`;
             }
-            return `<td class="px-6 py-4">${cellValue}</td>`;
+            return `<td class="px-6 py-3">${cellValue}</td>`;
           }).join('')}
         </tr>
       `).join('');
@@ -297,33 +381,33 @@
       chartComparativoInstance = new Chart(ctxComp, {
         type: 'bar',
         data: {
-          labels: meses,
+          labels: meses.map(m => m.toUpperCase()),
           datasets: [
             {
               type: 'bar',
-              label: 'Ventas 2025',
-              data: data2025,
-              backgroundColor: '#3b82f6', // Azul
-              borderRadius: 6
+              label: 'Ventas_2026',
+              data: data2026,
+              backgroundColor: '#e11d48', // Rojo Magenta Corporativo
+              borderRadius: 4
             },
             {
               type: 'bar',
-              label: 'Ventas 2026',
-              data: data2026,
-              backgroundColor: '#e11d48', // Rosa Magenta XIX
-              borderRadius: 6
+              label: 'Ventas_2025',
+              data: data2025,
+              backgroundColor: '#cbd5e1', // Gris Claro
+              borderRadius: 4
             },
             {
               type: 'line',
-              label: 'Proyección 2026',
+              label: 'Ventas_Proyectadas_2026',
               data: dataProy,
-              borderColor: '#ff3b30', // Rojo Coral XIX
-              backgroundColor: '#ff3b30',
-              borderWidth: 3,
+              borderColor: '#475569',
+              backgroundColor: '#000000',
+              borderWidth: 2,
               fill: false,
-              tension: 0.3,
-              pointRadius: 6,
-              pointBackgroundColor: '#ffffff'
+              tension: 0.1,
+              pointRadius: 5,
+              pointBackgroundColor: '#000000'
             }
           ]
         },
@@ -333,22 +417,27 @@
           plugins: { 
             legend: { 
               position: 'top', 
-              labels: { color: '#94a3b8', font: { weight: 'bold' } } 
+              labels: { color: '#334155', font: { weight: 'bold', size: 12 } } 
             } 
           },
           scales: {
-            x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
-            y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
+            x: { ticks: { color: '#475569', font: { weight: 'bold' } }, grid: { display: false } },
+            y: { 
+              ticks: { 
+                color: '#64748b',
+                callback: function(value) { return '$' + (value / 1000) + ' mil'; } 
+              }, 
+              grid: { color: '#f1f5f9' } 
+            }
           }
         }
       });
     }
 
-    // Eventos
-    document.getElementById('search').addEventListener('input', () => renderDashboard(getFilteredData()));
-    document.getElementById('filterMes').addEventListener('change', () => renderDashboard(getFilteredData()));
-    document.getElementById('filterTipo').addEventListener('change', () => renderDashboard(getFilteredData()));
-    document.getElementById('filterCC').addEventListener('change', () => renderDashboard(getFilteredData()));
+    // Escuchadores de eventos
+    document.getElementById('search').addEventListener('input', renderDashboard);
+    document.getElementById('filterMes').addEventListener('change', renderDashboard);
+    document.getElementById('filterCC').addEventListener('change', renderDashboard);
   </script>
 </body>
 </html>
