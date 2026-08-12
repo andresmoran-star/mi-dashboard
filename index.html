@@ -7,6 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Plugin de Chart.js para dibujar etiquetas numéricas sobre las barras -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
   </style>
@@ -18,7 +20,7 @@
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-4">
       <div>
         <h1 id="headerTitle" class="text-3xl font-extrabold tracking-tight text-blue-400">📊 Dashboard de Resultados y Comparativos</h1>
-        <p id="headerSubtitle" class="text-slate-400 text-sm">Consolidado: Ventas 2025 vs Ventas 2026 vs Proyección 2026</p>
+        <p id="headerSubtitle" class="text-slate-400 text-sm">Consolidado: Ventas 2025 vs Ventas 2026 vs Proyección 2026 vs Costos</p>
       </div>
       
       <!-- Botones de Cambio de Pantalla -->
@@ -88,7 +90,7 @@
             class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
         </div>
         <div>
-          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mes</label>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mes General Medios</label>
           <select id="filterMesMedios" class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
             <option value="">🗓️ Todos los Meses</option>
           </select>
@@ -145,24 +147,34 @@
 
       </div>
 
-      <!-- SECCIÓN: DESGLOSE POR MEDIO (EXCLUSIVO VENTAS 2026) -->
+      <!-- SECCIÓN: DESGLOSE POR MEDIO CON FILTRO PROPIO DE MES Y MARGEN BRUTO (%) EN LAS COLUMNAS -->
       <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-3">
           <div>
             <h2 id="titleDesgloseMedios" class="text-base font-bold text-slate-800 flex items-center gap-2">
-              📢 Ventas por Medio 2026 (Google, Meta, TikTok, etc.)
+              📢 Ventas por Medio 2026 y Margen Bruto (%)
             </h2>
-            <p class="text-xs text-slate-400 font-medium">Información exclusiva de Ventas Reales Año 2026</p>
+            <p class="text-xs text-slate-400 font-medium">Porcentaje superior = Margen Bruto % ((Venta - Costo) / Venta)</p>
           </div>
           
-          <!-- KPI TOTAL VENTAS 2026 EN MEDIOS -->
-          <div class="bg-rose-50 border border-rose-200 text-[#e11d48] px-4 py-2 rounded-xl flex items-center gap-3">
-            <span class="text-xs font-bold uppercase tracking-wider">Total Ventas 2026:</span>
-            <span id="totalVentasMedios2026" class="text-xl font-extrabold">$0.00</span>
+          <div class="flex flex-wrap items-center gap-3">
+            <!-- FILTRO EXCLUSIVO DE MES PARA ESTE GRÁFICO -->
+            <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
+              <label class="text-xs font-bold text-slate-500 uppercase">Mes Gráfico:</label>
+              <select id="filterMesGraficoExclusivo" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
+                <option value="">🗓️ Todos los Meses</option>
+              </select>
+            </div>
+
+            <!-- KPI TOTAL VENTAS 2026 EN MEDIOS -->
+            <div class="bg-rose-50 border border-rose-200 text-[#e11d48] px-4 py-2 rounded-xl flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider">Total Ventas 2026:</span>
+              <span id="totalVentasMedios2026" class="text-lg font-extrabold">$0.00</span>
+            </div>
           </div>
         </div>
 
-        <div class="h-72"><canvas id="chartDesgloseMedios"></canvas></div>
+        <div class="h-80"><canvas id="chartDesgloseMedios"></canvas></div>
       </div>
 
     </div>
@@ -170,6 +182,8 @@
   </div>
 
   <script>
+    Chart.register(ChartDataLabels); // Registrar Plugin de Etiquetas de Datos
+
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ8yeQyrFEH3B94cy7Ov4Gf74x7l-rdDC1Uybt8qwfWsGS-n5y2R0bpyoMTJwcO9oXAdc6_xpqya5HC/pub?gid=347166102&single=true&output=csv";
     let globalData = [];
     let montoKey = "";
@@ -235,11 +249,13 @@
     function populateFilters(data) {
       const selectMesMain = document.getElementById('filterMesMain');
       const selectMesMedios = document.getElementById('filterMesMedios');
+      const selectMesGrafico = document.getElementById('filterMesGraficoExclusivo');
       const selectCCMain = document.getElementById('filterCCMain');
       const selectTipoMain = document.getElementById('filterTipoMain');
 
       selectMesMain.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
       selectMesMedios.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
+      selectMesGrafico.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
       selectCCMain.innerHTML = '<option value="">🏢 Todos los Centros de Costos</option>';
       selectTipoMain.innerHTML = '<option value="">📂 Todos los Tipos</option>';
 
@@ -255,13 +271,9 @@
       const tiposUnicos = [...new Set(data.map(r => getKey(r, "Tipo") || getKey(r, "Año")).filter(Boolean))];
 
       mesesUnicos.forEach(mes => {
-        const opt1 = document.createElement('option');
-        opt1.value = mes; opt1.textContent = mes;
-        selectMesMain.appendChild(opt1);
-
-        const opt2 = document.createElement('option');
-        opt2.value = mes; opt2.textContent = mes;
-        selectMesMedios.appendChild(opt2);
+        const opt1 = document.createElement('option'); opt1.value = mes; opt1.textContent = mes; selectMesMain.appendChild(opt1);
+        const opt2 = document.createElement('option'); opt2.value = mes; opt2.textContent = mes; selectMesMedios.appendChild(opt2);
+        const opt3 = document.createElement('option'); opt3.value = mes; opt3.textContent = mes; selectMesGrafico.appendChild(opt3);
       });
 
       ccUnicos.forEach(cc => {
@@ -346,13 +358,14 @@
     function resetMarcaFilter() {
       selectedMarca = "";
       document.getElementById('activeFilterBadge').classList.add('hidden');
-      document.getElementById('titleDesgloseMedios').innerText = `📢 Ventas por Medio 2026 (Google, Meta, TikTok, etc.)`;
+      document.getElementById('titleDesgloseMedios').innerText = `📢 Ventas por Medio 2026 y Margen Bruto (%)`;
       renderDashboard();
     }
 
     function resetMediosFilters() {
       document.getElementById('searchMedios').value = "";
       document.getElementById('filterMesMedios').value = "";
+      document.getElementById('filterMesGraficoExclusivo').value = "";
       resetMarcaFilter();
     }
 
@@ -471,7 +484,10 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { position: 'top', labels: { color: '#94a3b8' } } },
+          plugins: { 
+            legend: { position: 'top', labels: { color: '#94a3b8' } },
+            datalabels: { display: false }
+          },
           scales: {
             x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
             y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
@@ -498,7 +514,10 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { position: 'top', labels: { color: '#334155', font: { weight: 'bold', size: 11 } } } },
+          plugins: { 
+            legend: { position: 'top', labels: { color: '#334155', font: { weight: 'bold', size: 11 } } },
+            datalabels: { display: false }
+          },
           scales: {
             x: { ticks: { color: '#475569', font: { weight: 'bold', size: 10 } }, grid: { display: false } },
             y: { ticks: { color: '#64748b', callback: function(value) { return '$' + (value / 1000) + ' mil'; } }, grid: { color: '#f1f5f9' } }
@@ -507,29 +526,46 @@
       });
     }
 
-    // DESGLOSE EXCLUSIVO DE VENTAS 2026 POR MEDIO Y TOTALIZADO
-    function renderChartDesgloseMedios2026(data) {
-      const mediosMap = {};
+    // DESGLOSE CON FILTRO EXCLUSIVO DE MES Y MARGEN BRUTO (%) ARRIBA DE LAS COLUMNAS
+    function renderChartDesgloseMedios2026(dataMedios) {
+      const selectedMesExclusivo = document.getElementById('filterMesGraficoExclusivo').value;
+      const mediosVentasMap = {};
+      const mediosCostosMap = {};
       let totalVentas2026 = 0;
 
-      data.forEach(row => {
+      dataMedios.forEach(row => {
+        const rowMes = getKey(row, "Mes");
+        // Filtro propio del mes para este gráfico
+        if (selectedMesExclusivo && rowMes !== selectedMesExclusivo) return;
+
         const tipo = (getKey(row, "Tipo") || getKey(row, "Año") || "").toLowerCase();
-        
-        // FILTRO ESTRICTO: Solo sumar registros de VENTAS 2026 (sin proyecciones ni 2025)
+        const medio = getKey(row, "Medio") || "Sin Especificar";
+        const monto = parseMonto(row[montoKey]);
+
+        // Si es Venta 2026
         if (tipo.includes("2026") && !tipo.includes("proy") && !tipo.includes("proyección") && !tipo.includes("proyeccion")) {
-          const medio = getKey(row, "Medio") || "Sin Especificar";
-          const monto = parseMonto(row[montoKey]);
-          
-          mediosMap[medio] = (mediosMap[medio] || 0) + monto;
+          mediosVentasMap[medio] = (mediosVentasMap[medio] || 0) + monto;
           totalVentas2026 += monto;
+        }
+        // Si es Costo
+        else if (tipo.includes("costo") || tipo.includes("gast")) {
+          mediosCostosMap[medio] = (mediosCostosMap[medio] || 0) + monto;
         }
       });
 
-      // Actualizar tarjeta del Total de Ventas 2026 en Medios
       document.getElementById('totalVentasMedios2026').innerText = `$${totalVentas2026.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
-      const labels = Object.keys(mediosMap);
-      const values = Object.values(mediosMap);
+      const labels = Object.keys(mediosVentasMap);
+      const valuesVentas = Object.values(mediosVentasMap);
+
+      // Calcular Margen Bruto % para cada medio: ((Ingreso - Costo) / Ingreso) * 100
+      const margenesPercent = labels.map(m => {
+        const venta = mediosVentasMap[m] || 0;
+        const costo = mediosCostosMap[m] || 0;
+        if (venta <= 0) return "0%";
+        const margen = ((venta - costo) / venta) * 100;
+        return Math.round(margen) + "%";
+      });
 
       if (chartDesgloseInstance) chartDesgloseInstance.destroy();
       const ctx = document.getElementById('chartDesgloseMedios').getContext('2d');
@@ -537,10 +573,10 @@
       chartDesgloseInstance = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: labels.length > 0 ? labels : ['Sin Datos 2026'],
+          labels: labels.length > 0 ? labels : ['Sin Datos'],
           datasets: [{
             label: 'Ventas 2026 ($)',
-            data: values.length > 0 ? values : [0],
+            data: valuesVentas.length > 0 ? valuesVentas : [0],
             backgroundColor: ['#e11d48', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'],
             borderRadius: 6
           }]
@@ -548,8 +584,22 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          layout: { padding: { top: 25 } },
           plugins: {
-            legend: { display: false }
+            legend: { display: false },
+            // PLUGIN DATALABELS PARA MOSTRAR EL % EN LA PARTE SUPERIOR DE CADA COLUMNA
+            datalabels: {
+              anchor: 'end',
+              align: 'top',
+              color: '#1e293b',
+              font: { weight: 'bold', size: 12 },
+              formatter: function(value, context) {
+                if (value === 0) return '';
+                const idx = context.dataIndex;
+                const pct = margenesPercent[idx] || '';
+                return `${pct} Margen`;
+              }
+            }
           },
           scales: {
             x: { ticks: { color: '#334155', font: { weight: 'bold' } }, grid: { display: false } },
@@ -573,6 +623,7 @@
 
     document.getElementById('searchMedios').addEventListener('input', renderDashboard);
     document.getElementById('filterMesMedios').addEventListener('change', renderDashboard);
+    document.getElementById('filterMesGraficoExclusivo').addEventListener('change', renderDashboard);
   </script>
 </body>
 </html>
