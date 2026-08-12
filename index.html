@@ -181,7 +181,22 @@
     let chartMediosInstance = null;
     let chartDesgloseInstance = null;
 
-    const MESES_ORDEN = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+    const MESES_MAP = {
+      "enero": "Enero", "ene": "Enero", "january": "Enero",
+      "febrero": "Febrero", "feb": "Febrero", "february": "Febrero",
+      "marzo": "Marzo", "mar": "Marzo", "march": "Marzo",
+      "abril": "Abril", "abr": "Abril", "april": "Abril",
+      "mayo": "Mayo", "may": "Mayo",
+      "junio": "Junio", "jun": "Junio", "june": "Junio",
+      "julio": "Julio", "jul": "Julio", "july": "Julio",
+      "agosto": "Agosto", "ago": "Agosto", "august": "Agosto",
+      "septiembre": "Septiembre", "sep": "Septiembre", "sept": "Septiembre", "september": "Septiembre",
+      "octubre": "Octubre", "oct": "Octubre", "october": "Octubre",
+      "noviembre": "Noviembre", "nov": "Noviembre", "november": "Noviembre",
+      "diciembre": "Diciembre", "dic": "Diciembre", "december": "Diciembre"
+    };
+
+    const MESES_ORDEN = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
     Papa.parse(CSV_URL, {
       download: true,
@@ -234,6 +249,17 @@
       return matchedKey ? String(row[matchedKey]).trim() : String(row[searchName] || '').trim();
     }
 
+    // Normaliza el mes limpiando espacios invisibles y tildes
+    function getMesNormalizado(row) {
+      const rawMes = getKey(row, "Mes").toLowerCase().trim();
+      for (const key in MESES_MAP) {
+        if (rawMes.includes(key)) {
+          return MESES_MAP[key];
+        }
+      }
+      return rawMes ? rawMes.charAt(0).toUpperCase() + rawMes.slice(1) : "";
+    }
+
     function getTipoRow(row) {
       const val = (getKey(row, "Tipo") || getKey(row, "Año") || "").toLowerCase().trim();
       if (val.includes("proy") || val.includes("proyección") || val.includes("proyeccion") || val.includes("meta")) return "proyeccion";
@@ -256,10 +282,10 @@
       selectCCMain.innerHTML = '<option value="">🏢 Todos los Centros de Costos</option>';
       selectTipoMain.innerHTML = '<option value="">📂 Todos los Tipos</option>';
 
-      let mesesUnicos = [...new Set(data.map(r => getKey(r, "Mes")).filter(Boolean))];
+      let mesesUnicos = [...new Set(data.map(r => getMesNormalizado(r)).filter(Boolean))];
       mesesUnicos.sort((a, b) => {
-        let idxA = MESES_ORDEN.findIndex(m => a.toLowerCase().includes(m));
-        let idxB = MESES_ORDEN.findIndex(m => b.toLowerCase().includes(m));
+        let idxA = MESES_ORDEN.indexOf(a);
+        let idxB = MESES_ORDEN.indexOf(b);
         if (idxA !== -1 && idxB !== -1) return idxA - idxB;
         return a.localeCompare(b);
       });
@@ -294,7 +320,7 @@
 
       return globalData.filter(row => {
         const matchesSearch = Object.values(row).some(val => String(val).toLowerCase().includes(searchTerm));
-        const rowMes = getKey(row, "Mes");
+        const rowMes = getMesNormalizado(row);
         const rowCC = getKey(row, "Centro de Costos") || getKey(row, "Centro");
         const rowTipo = getKey(row, "Tipo") || getKey(row, "Año");
 
@@ -309,7 +335,7 @@
       return globalData.filter(row => {
         const rowCC = getKey(row, "Centro de Costos") || getKey(row, "Centro");
         const rowMarca = getKey(row, "Marca");
-        const rowMes = getKey(row, "Mes");
+        const rowMes = getMesNormalizado(row);
 
         const matchesMediosCC = rowCC.toLowerCase().includes("ejecuci") || rowCC.toLowerCase().includes("medios");
         const matchesSearch = !searchTerm || rowMarca.toLowerCase().includes(searchTerm);
@@ -445,17 +471,13 @@
     }
 
     function getMonthlyData(data) {
-      let meses = [...new Set(globalData.map(r => getKey(r, "Mes")).filter(Boolean))];
-      meses.sort((a, b) => {
-        let idxA = MESES_ORDEN.findIndex(m => a.toLowerCase().includes(m));
-        let idxB = MESES_ORDEN.findIndex(m => b.toLowerCase().includes(m));
-        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-        return a.localeCompare(b);
-      });
+      // Extrae únicamente la lista sin duplicados ordenados cronológicamente
+      let mesesUnicosSet = new Set(globalData.map(r => getMesNormalizado(r)).filter(Boolean));
+      let meses = MESES_ORDEN.filter(m => mesesUnicosSet.has(m));
 
-      const data2025 = meses.map(mes => data.filter(r => getKey(r, "Mes") === mes && getTipoRow(r) === "2025").reduce((s, r) => s + parseMonto(r[montoKey]), 0));
-      const data2026 = meses.map(mes => data.filter(r => getKey(r, "Mes") === mes && getTipoRow(r) === "2026").reduce((s, r) => s + parseMonto(r[montoKey]), 0));
-      const dataProy = meses.map(mes => data.filter(r => getKey(r, "Mes") === mes && getTipoRow(r) === "proyeccion").reduce((s, r) => s + parseMonto(r[montoKey]), 0));
+      const data2025 = meses.map(mes => data.filter(r => getMesNormalizado(r) === mes && getTipoRow(r) === "2025").reduce((s, r) => s + parseMonto(r[montoKey]), 0));
+      const data2026 = meses.map(mes => data.filter(r => getMesNormalizado(r) === mes && getTipoRow(r) === "2026").reduce((s, r) => s + parseMonto(r[montoKey]), 0));
+      const dataProy = meses.map(mes => data.filter(r => getMesNormalizado(r) === mes && getTipoRow(r) === "proyeccion").reduce((s, r) => s + parseMonto(r[montoKey]), 0));
 
       return { meses, data2025, data2026, dataProy };
     }
@@ -527,7 +549,7 @@
       let totalVentas2026 = 0;
 
       dataMedios.forEach(row => {
-        const rowMes = getKey(row, "Mes");
+        const rowMes = getMesNormalizado(row);
         if (selectedMesExclusivo && rowMes !== selectedMesExclusivo) return;
 
         const tipoNorm = getTipoRow(row);
