@@ -69,9 +69,17 @@
           <div class="h-96"><canvas id="chartComparativoMain"></canvas></div>
         </div>
         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
-          <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
-            🏆 Top 5 Marcas (2026 y 2025)
-          </h2>
+          <div class="flex items-center justify-between mb-1">
+            <h2 id="titleTopMarcas" class="text-base font-bold text-slate-800 flex items-center gap-2">
+              🏆 Top 10 Marcas (Ventas 2026)
+            </h2>
+          </div>
+          <div id="mesSeleccionadoBadge" class="hidden mb-3">
+            <button onclick="clearMesSeleccionado()" class="bg-rose-50 border border-rose-200 text-[#e11d48] px-3 py-1 rounded-lg text-xs font-semibold hover:bg-rose-100 transition">
+              <span id="mesSeleccionadoTexto"></span> · Quitar filtro ✕
+            </button>
+          </div>
+          <p class="text-xs text-slate-400 font-medium mb-2">* Clic en una barra del gráfico mensual para filtrar por ese mes</p>
           <div class="h-96"><canvas id="chartTopMarcas"></canvas></div>
         </div>
       </div>
@@ -120,6 +128,7 @@
                   <th class="px-4 py-3 border-r border-rose-500">Marcas</th>
                   <th class="px-4 py-3 text-right border-r border-rose-500">Ventas 2026</th>
                   <th class="px-4 py-3 text-right border-r border-rose-500">Ventas 2025</th>
+                  <th class="px-4 py-3 text-right border-r border-rose-500">% Variación</th>
                   <th class="px-4 py-3 text-right border-r border-rose-500">Proyección 2026</th>
                   <th class="px-4 py-3 text-right">% Cumpl.</th>
                 </tr>
@@ -139,34 +148,6 @@
         </div>
       </div>
 
-      <!-- SECCIÓN: DESGLOSE POR MEDIO CON FILTRO Y MARGEN BRUTO (%) -->
-      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-3">
-          <div>
-            <h2 id="titleDesgloseMedios" class="text-base font-bold text-slate-800 flex items-center gap-2">
-              📢 Ventas por Medio 2026 y Margen Bruto (%)
-            </h2>
-            <p class="text-xs text-slate-400 font-medium">Margen % = ((Ventas 2026 - Costo) / Ventas 2026) * 100</p>
-          </div>
-          
-          <div class="flex flex-wrap items-center gap-3">
-            <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
-              <label class="text-xs font-bold text-slate-500 uppercase">Mes Gráfico:</label>
-              <select id="filterMesGraficoExclusivo" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
-                <option value="">🗓️ Todos los Meses</option>
-              </select>
-            </div>
-
-            <div class="bg-rose-50 border border-rose-200 text-[#e11d48] px-4 py-2 rounded-xl flex items-center gap-2">
-              <span class="text-xs font-bold uppercase tracking-wider">Total Ventas 2026:</span>
-              <span id="totalVentasMedios2026" class="text-lg font-extrabold">$0.00</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="h-80"><canvas id="chartDesgloseMedios"></canvas></div>
-      </div>
-
     </div>
 
   </div>
@@ -181,8 +162,9 @@
     let currentSection = "ALL";
     let chartMainInstance = null;
     let chartMediosInstance = null;
-    let chartDesgloseInstance = null;
     let chartTopMarcasInstance = null;
+    let selectedMesChart = "";
+    let lastMainChartMeses = [];
 
     const MESES_MAP = {
       "enero": "Enero", "ene": "Enero", "january": "Enero",
@@ -278,12 +260,10 @@
     function populateFilters(data) {
       const selectMesMain = document.getElementById('filterMesMain');
       const selectMesMedios = document.getElementById('filterMesMedios');
-      const selectMesGrafico = document.getElementById('filterMesGraficoExclusivo');
       const selectCCMain = document.getElementById('filterCCMain');
 
       selectMesMain.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
       selectMesMedios.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
-      selectMesGrafico.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
       selectCCMain.innerHTML = '<option value="">🏢 Todos los Centros de Costos</option>';
 
       let mesesUnicos = [...new Set(data.map(r => getMesNormalizado(r)).filter(Boolean))];
@@ -297,7 +277,6 @@
       mesesUnicos.forEach(mes => {
         const opt1 = document.createElement('option'); opt1.value = mes; opt1.textContent = mes; selectMesMain.appendChild(opt1);
         const opt2 = document.createElement('option'); opt2.value = mes; opt2.textContent = mes; selectMesMedios.appendChild(opt2);
-        const opt3 = document.createElement('option'); opt3.value = mes; opt3.textContent = mes; selectMesGrafico.appendChild(opt3);
       });
 
       CC_MAIN_OPTIONS.forEach(cc => {
@@ -374,21 +353,18 @@
       selectedMarca = marca;
       document.getElementById('activeFilterBadge').classList.remove('hidden');
       document.getElementById('activeFilterText').innerText = `Filtro aplicado por Marca: ${marca}`;
-      document.getElementById('titleDesgloseMedios').innerText = `📢 Ventas por Medio 2026 - Marca: ${marca}`;
       renderDashboard();
     }
 
     function resetMarcaFilter() {
       selectedMarca = "";
       document.getElementById('activeFilterBadge').classList.add('hidden');
-      document.getElementById('titleDesgloseMedios').innerText = `📢 Ventas por Medio 2026 y Margen Bruto (%)`;
       renderDashboard();
     }
 
     function resetMediosFilters() {
       document.getElementById('searchMedios').value = "";
       document.getElementById('filterMesMedios').value = "";
-      document.getElementById('filterMesGraficoExclusivo').value = "";
       resetMarcaFilter();
     }
 
@@ -403,7 +379,6 @@
         const dataMedios = getFilteredDataMedios();
         renderPivoteMarcas(dataMedios);
         renderChartMedios(dataMedios);
-        renderChartDesgloseMedios2026(dataMedios);
       }
     }
 
@@ -413,17 +388,31 @@
       const rowsProy = data.filter(r => getTipoRow(r) === "proyeccion");
 
       const totalVentas2026 = rows2026.reduce((sum, row) => sum + parseMonto(row[montoKey]), 0);
-      const totalVentas2025 = rows2025.reduce((sum, row) => sum + parseMonto(row[montoKey]), 0);
       const totalProy2026 = rowsProy.reduce((sum, row) => sum + parseMonto(row[montoKey]), 0);
 
+      // Determinar el último mes con datos de Ventas 2026, para comparar 2025 en el mismo periodo (year-to-date)
+      const mesesCon2026 = [...new Set(rows2026.map(r => getMesNormalizado(r)).filter(Boolean))];
+      const idxMeses = mesesCon2026.map(m => MESES_ORDEN.indexOf(m)).filter(i => i !== -1);
+      const maxIdx = idxMeses.length > 0 ? Math.max(...idxMeses) : -1;
+
+      const rows2025Comparable = maxIdx >= 0
+        ? rows2025.filter(r => {
+            const idx = MESES_ORDEN.indexOf(getMesNormalizado(r));
+            return idx !== -1 && idx <= maxIdx;
+          })
+        : rows2025;
+
+      const totalVentas2025Comparable = rows2025Comparable.reduce((sum, row) => sum + parseMonto(row[montoKey]), 0);
+
       const cumplimiento = totalProy2026 > 0 ? (totalVentas2026 / totalProy2026 * 100) : 0;
-      const crecimiento = totalVentas2025 > 0 ? ((totalVentas2026 - totalVentas2025) / totalVentas2025 * 100) : 0;
+      const crecimiento = totalVentas2025Comparable > 0 ? ((totalVentas2026 - totalVentas2025Comparable) / totalVentas2025Comparable * 100) : 0;
       const esPositivo = crecimiento >= 0;
+      const mesLimite = maxIdx >= 0 ? MESES_ORDEN[maxIdx] : "";
 
       document.getElementById('kpis').innerHTML = `
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
           <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Ventas 2026 (Monto Total)</p>
-          <p class="text-3xl font-extrabold text-emerald-600 mt-2">$${totalVentas2026.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+          <p class="text-3xl font-extrabold text-emerald-600 mt-2">$${Math.round(totalVentas2026).toLocaleString('es-EC')}</p>
         </div>
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
           <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Cumplimiento vs Proyección 2026</p>
@@ -432,16 +421,32 @@
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
           <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Crecimiento Ventas 2026 vs 2025</p>
           <p class="text-3xl font-extrabold ${esPositivo ? 'text-emerald-600' : 'text-red-600'} mt-2">${esPositivo ? '+' : ''}${crecimiento.toFixed(1)}%</p>
+          ${mesLimite ? `<p class="text-[11px] text-slate-400 mt-1">Comparado hasta ${mesLimite} en ambos años</p>` : ''}
         </div>
       `;
     }
 
     function renderPivoteMarcas(mediosData) {
+      // Determinar el último mes con datos de Ventas 2026, para comparar 2025 en el mismo periodo
+      const rows2026Disponibles = mediosData.filter(r => getTipoRow(r) === "2026");
+      const mesesCon2026 = [...new Set(rows2026Disponibles.map(r => getMesNormalizado(r)).filter(Boolean))];
+      const idxMeses = mesesCon2026.map(m => MESES_ORDEN.indexOf(m)).filter(i => i !== -1);
+      const maxIdx = idxMeses.length > 0 ? Math.max(...idxMeses) : -1;
+
+      const dentroDelPeriodo = (row) => {
+        if (maxIdx < 0) return true;
+        const idx = MESES_ORDEN.indexOf(getMesNormalizado(row));
+        return idx !== -1 && idx <= maxIdx;
+      };
+
       const marcasMap = {};
 
       mediosData.forEach(row => {
-        const marca = getKey(row, "Marca") || "Sin Marca";
         const tipoNorm = getTipoRow(row);
+        if (tipoNorm !== "2026" && tipoNorm !== "2025" && tipoNorm !== "proyeccion") return;
+        if ((tipoNorm === "2026" || tipoNorm === "2025") && !dentroDelPeriodo(row)) return;
+
+        const marca = getKey(row, "Marca") || "Sin Marca";
         const monto = parseMonto(row[montoKey]);
 
         if (!marcasMap[marca]) {
@@ -457,19 +462,27 @@
         }
       });
 
+      // Ordenar de mayor a menor según Ventas 2026
+      const filas = Object.entries(marcasMap).sort((a, b) => b[1].v2026 - a[1].v2026);
+
       const tbody = document.getElementById('pivote-body');
-      tbody.innerHTML = Object.entries(marcasMap).map(([marca, vals], idx) => {
+      tbody.innerHTML = filas.map(([marca, vals], idx) => {
         const cumplimiento = vals.proy2026 > 0 ? Math.round((vals.v2026 / vals.proy2026) * 100) : 0;
+        const variacion = vals.v2025 > 0
+          ? Math.round(((vals.v2026 - vals.v2025) / vals.v2025) * 100)
+          : (vals.v2026 > 0 ? 100 : 0);
+        const esPositivo = variacion >= 0;
         const bgRow = idx % 2 === 0 ? "bg-white" : "bg-slate-50/60";
         const activeClass = selectedMarca.toLowerCase() === marca.toLowerCase() ? "bg-rose-50 font-bold border-l-4 border-l-[#e11d48]" : "";
 
         return `
           <tr onclick="filterByMarca('${marca}')" class="${bgRow} ${activeClass} hover:bg-rose-50/80 cursor-pointer transition">
             <td class="px-4 py-3 font-medium text-slate-800">${marca}</td>
-            <td class="px-4 py-3 text-right font-semibold text-slate-900">$${vals.v2026.toLocaleString('es-EC')}</td>
-            <td class="px-4 py-3 text-right text-slate-500">$${vals.v2025.toLocaleString('es-EC')}</td>
-            <td class="px-4 py-3 text-right text-slate-600">$${vals.proy2026.toLocaleString('es-EC')}</td>
-            <td class="px-4 py-3 text-right font-bold ${cumplimiento >= 100 ? 'text-emerald-600' : 'text-slate-700'}">${cumplimiento} %</td>
+            <td class="px-4 py-3 text-right font-semibold text-slate-900">$${Math.round(vals.v2026).toLocaleString('es-EC')}</td>
+            <td class="px-4 py-3 text-right text-slate-700">$${Math.round(vals.v2025).toLocaleString('es-EC')}</td>
+            <td class="px-4 py-3 text-right font-bold ${esPositivo ? 'text-emerald-600' : 'text-red-600'}">${esPositivo ? '+' : ''}${variacion}%</td>
+            <td class="px-4 py-3 text-right text-slate-700">$${Math.round(vals.proy2026).toLocaleString('es-EC')}</td>
+            <td class="px-4 py-3 text-right font-bold ${cumplimiento >= 100 ? 'text-emerald-600' : 'text-slate-700'}">${cumplimiento}%</td>
           </tr>
         `;
       }).join('');
@@ -489,6 +502,7 @@
 
     function renderChartMain(data) {
       const { meses, data2025, data2026, dataProy } = getMonthlyData(data);
+      lastMainChartMeses = meses;
 
       if (chartMainInstance) chartMainInstance.destroy();
       const ctx = document.getElementById('chartComparativoMain').getContext('2d');
@@ -505,6 +519,17 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          onClick: function(evt, elements) {
+            if (!elements || elements.length === 0) return;
+            const idx = elements[0].index;
+            const mesClic = lastMainChartMeses[idx];
+            if (!mesClic) return;
+            selectedMesChart = (selectedMesChart === mesClic) ? "" : mesClic;
+            renderChartTopMarcas(getFilteredDataMainChart());
+          },
+          onHover: function(evt, elements) {
+            evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+          },
           plugins: { 
             legend: { position: 'top', labels: { color: '#334155', font: { weight: 'bold', size: 11 } } },
             datalabels: { display: false }
@@ -517,28 +542,51 @@
       });
     }
 
+    function clearMesSeleccionado() {
+      selectedMesChart = "";
+      renderChartTopMarcas(getFilteredDataMainChart());
+    }
+
     function renderChartTopMarcas(data) {
       const marcasMap = {};
 
       data.forEach(row => {
         const tipoNorm = getTipoRow(row);
-        if (tipoNorm !== "2026" && tipoNorm !== "2025") return;
+        if (tipoNorm !== "2026") return;
+        if (selectedMesChart) {
+          const rowMes = getMesNormalizado(row);
+          if (rowMes !== selectedMesChart) return;
+        }
         const marca = getKey(row, "Marca") || "Sin Marca";
         const monto = parseMonto(row[montoKey]);
         marcasMap[marca] = (marcasMap[marca] || 0) + monto;
       });
 
-      const top5 = Object.entries(marcasMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      const top10 = Object.entries(marcasMap).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+      // Actualizar título y badge de mes seleccionado
+      const titleEl = document.getElementById('titleTopMarcas');
+      const badgeEl = document.getElementById('mesSeleccionadoBadge');
+      const badgeTextEl = document.getElementById('mesSeleccionadoTexto');
+      if (titleEl) titleEl.innerText = '🏆 Top 10 Marcas (Ventas 2026)';
+      if (selectedMesChart) {
+        badgeEl.classList.remove('hidden');
+        badgeTextEl.innerText = `Mes: ${selectedMesChart}`;
+      } else {
+        badgeEl.classList.add('hidden');
+      }
+
+      const colorPalette = ['#e11d48', '#f43f5e', '#fb7185', '#fda4af', '#fecdd3', '#94a3b8', '#64748b', '#475569', '#334155', '#cbd5e1'];
 
       if (chartTopMarcasInstance) chartTopMarcasInstance.destroy();
       const ctx = document.getElementById('chartTopMarcas').getContext('2d');
       chartTopMarcasInstance = new Chart(ctx, {
         type: 'pie',
         data: {
-          labels: top5.map(t => t[0]),
+          labels: top10.map(t => t[0]),
           datasets: [{
-            data: top5.map(t => Math.round(t[1])),
-            backgroundColor: ['#e11d48', '#f43f5e', '#fb7185', '#fda4af', '#cbd5e1'],
+            data: top10.map(t => Math.round(t[1])),
+            backgroundColor: colorPalette,
             borderColor: '#ffffff',
             borderWidth: 2
           }]
@@ -548,6 +596,15 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { position: 'bottom', labels: { color: '#334155', font: { size: 11, weight: 'bold' }, boxWidth: 12 } },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                  const pct = total > 0 ? Math.round(context.parsed / total * 100) : 0;
+                  return `${context.label}: $${Math.round(context.parsed).toLocaleString('es-EC')} (${pct}%)`;
+                }
+              }
+            },
             datalabels: {
               color: '#ffffff',
               font: { weight: 'bold', size: 11 },
@@ -592,88 +649,6 @@
       });
     }
 
-    function renderChartDesgloseMedios2026(dataMedios) {
-      const selectedMesExclusivo = document.getElementById('filterMesGraficoExclusivo').value;
-      const mediosVentasMap = {};
-      const mediosCostosMap = {};
-      let totalVentas2026 = 0;
-
-      dataMedios.forEach(row => {
-        const rowMes = getMesNormalizado(row);
-        if (selectedMesExclusivo && rowMes !== selectedMesExclusivo) return;
-
-        const tipoNorm = getTipoRow(row);
-        const medio = getKey(row, "Medio") || "Sin Especificar";
-        const monto = parseMonto(row[montoKey]);
-
-        if (tipoNorm === "2026") {
-          mediosVentasMap[medio] = (mediosVentasMap[medio] || 0) + monto;
-          totalVentas2026 += monto;
-        } else if (tipoNorm === "costo") {
-          mediosCostosMap[medio] = (mediosCostosMap[medio] || 0) + monto;
-        }
-      });
-
-      document.getElementById('totalVentasMedios2026').innerText = `$${totalVentas2026.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-
-      const labels = Object.keys(mediosVentasMap);
-      const valuesVentas = Object.values(mediosVentasMap);
-
-      const margenesPercent = labels.map(m => {
-        const venta = mediosVentasMap[m] || 0;
-        const costo = mediosCostosMap[m] || 0;
-        if (venta <= 0) return "0%";
-        const margen = ((venta - costo) / venta) * 100;
-        return Math.round(margen) + "%";
-      });
-
-      if (chartDesgloseInstance) chartDesgloseInstance.destroy();
-      const ctx = document.getElementById('chartDesgloseMedios').getContext('2d');
-      
-      chartDesgloseInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels.length > 0 ? labels : ['Sin Datos'],
-          datasets: [{
-            label: 'Ventas 2026 ($)',
-            data: valuesVentas.length > 0 ? valuesVentas : [0],
-            backgroundColor: ['#e11d48', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'],
-            borderRadius: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          layout: { padding: { top: 25 } },
-          plugins: {
-            legend: { display: false },
-            datalabels: {
-              anchor: 'end',
-              align: 'top',
-              color: '#1e293b',
-              font: { weight: 'bold', size: 12 },
-              formatter: function(value, context) {
-                if (value === 0) return '';
-                const idx = context.dataIndex;
-                const pct = margenesPercent[idx] || '';
-                return `${pct} Margen`;
-              }
-            }
-          },
-          scales: {
-            x: { ticks: { color: '#334155', font: { weight: 'bold' } }, grid: { display: false } },
-            y: { 
-              ticks: { 
-                color: '#64748b',
-                callback: function(value) { return '$' + value.toLocaleString('es-EC'); }
-              }, 
-              grid: { color: '#f1f5f9' } 
-            }
-          }
-        }
-      });
-    }
-
     // Escuchadores de eventos
     document.getElementById('searchMain').addEventListener('input', renderDashboard);
     document.getElementById('filterMesMain').addEventListener('change', renderDashboard);
@@ -681,7 +656,6 @@
 
     document.getElementById('searchMedios').addEventListener('input', renderDashboard);
     document.getElementById('filterMesMedios').addEventListener('change', renderDashboard);
-    document.getElementById('filterMesGraficoExclusivo').addEventListener('change', renderDashboard);
   </script>
 </body>
 </html>
