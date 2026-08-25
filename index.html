@@ -12,66 +12,68 @@
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
   </style>
 </head>
-<body id="mainBody" class="bg-[#0b0f19] text-white min-h-screen p-4 md:p-6 transition-colors duration-300">
+<body id="mainBody" class="bg-slate-50 text-slate-800 min-h-screen p-4 md:p-6">
   <div class="max-w-7xl mx-auto space-y-6">
     
     <!-- Encabezado con Navegación -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-4">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-200 pb-4 gap-4">
       <div>
-        <h1 id="headerTitle" class="text-3xl font-extrabold tracking-tight text-blue-400">📊 Dashboard de Resultados y Comparativos</h1>
-        <p id="headerSubtitle" class="text-slate-400 text-sm">Consolidado: Ventas 2025 vs Ventas 2026 vs Proyección 2026 vs Costos</p>
+        <h1 id="headerTitle" class="text-3xl font-extrabold tracking-tight text-[#e11d48]">📊 Dashboard de Resultados y Comparativos</h1>
+        <p id="headerSubtitle" class="text-slate-500 text-sm">Consolidado: Ventas 2025 vs Ventas 2026 vs Proyección 2026 vs Costos</p>
       </div>
       
       <!-- Botones de Cambio de Pantalla -->
-      <div class="flex items-center gap-2 bg-slate-800/80 p-1.5 rounded-xl border border-slate-700 text-xs font-semibold">
-        <button id="btnSectionAll" onclick="switchSection('ALL')" class="px-4 py-2 rounded-lg bg-blue-600 text-white shadow-sm transition">
+      <div class="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm text-xs font-semibold">
+        <button id="btnSectionAll" onclick="switchSection('ALL')" class="px-4 py-2 rounded-lg bg-[#e11d48] text-white shadow-sm transition">
           📊 Visión General
         </button>
-        <button id="btnSectionMedios" onclick="switchSection('MEDIOS')" class="px-4 py-2 rounded-lg text-slate-300 hover:text-white transition">
+        <button id="btnSectionMedios" onclick="switchSection('MEDIOS')" class="px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition">
           🎯 Ejecución de Medios
         </button>
       </div>
 
-      <div id="status" class="bg-yellow-500/10 text-yellow-400 px-4 py-2 rounded-lg border border-yellow-500/20 text-xs font-semibold animate-pulse">
+      <div id="status" class="bg-yellow-50 text-yellow-600 px-4 py-2 rounded-lg border border-yellow-200 text-xs font-semibold animate-pulse">
         ⏳ Cargando datos...
       </div>
     </div>
 
-    <!-- PANTALLA 1: VISIÓN GENERAL (Fondo Oscuro Principal) -->
+    <!-- PANTALLA 1: VISIÓN GENERAL -->
     <div id="sectionVisaoGeral" class="space-y-6">
-      <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/80 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
-          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Buscador General</label>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Buscador General</label>
           <input type="text" id="searchMain" placeholder="🔍 Buscar cliente, medio, grupo..." 
-            class="w-full bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-blue-500 transition text-sm">
+            class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
         </div>
         <div>
-          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Centro de Costos</label>
-          <select id="filterCCMain" class="w-full bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-blue-500 transition text-sm">
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Centro de Costos</label>
+          <select id="filterCCMain" class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
             <option value="">🏢 Todos los Centros de Costos</option>
           </select>
         </div>
         <div>
-          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mes</label>
-          <select id="filterMesMain" class="w-full bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-blue-500 transition text-sm">
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Mes</label>
+          <select id="filterMesMain" class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
             <option value="">🗓️ Todos los Meses</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Tipo / Año</label>
-          <select id="filterTipoMain" class="w-full bg-slate-900 border border-slate-700 text-white p-2.5 rounded-xl focus:outline-none focus:border-blue-500 transition text-sm">
-            <option value="">📂 Todos los Tipos</option>
           </select>
         </div>
       </div>
 
-      <div id="kpis" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+      <div id="kpis" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
 
-      <div class="bg-[#141c2e] p-6 rounded-2xl border border-slate-800 shadow-2xl">
-        <h2 class="text-base font-bold text-slate-200 mb-4 flex items-center gap-2">
-          📈 Comparativo Mensual: Real 2025 / 2026 (Barras) vs Proyección (Línea)
-        </h2>
-        <div class="h-96"><canvas id="chartComparativoMain"></canvas></div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+            📈 Comparativo Mensual: Real 2025 / 2026 (Barras) vs Proyección (Línea)
+          </h2>
+          <div class="h-96"><canvas id="chartComparativoMain"></canvas></div>
+        </div>
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+          <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+            🏆 Top 5 Marcas (2026 y 2025)
+          </h2>
+          <div class="h-96"><canvas id="chartTopMarcas"></canvas></div>
+        </div>
       </div>
     </div>
 
@@ -180,6 +182,7 @@
     let chartMainInstance = null;
     let chartMediosInstance = null;
     let chartDesgloseInstance = null;
+    let chartTopMarcasInstance = null;
 
     const MESES_MAP = {
       "enero": "Enero", "ene": "Enero", "january": "Enero",
@@ -269,18 +272,19 @@
       return val;
     }
 
+    // Únicos centros de costos habilitados en el filtro de Visión General
+    const CC_MAIN_OPTIONS = ["Ejecución de Medios", "Servicios fee", "Proyectos tecnológicos"];
+
     function populateFilters(data) {
       const selectMesMain = document.getElementById('filterMesMain');
       const selectMesMedios = document.getElementById('filterMesMedios');
       const selectMesGrafico = document.getElementById('filterMesGraficoExclusivo');
       const selectCCMain = document.getElementById('filterCCMain');
-      const selectTipoMain = document.getElementById('filterTipoMain');
 
       selectMesMain.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
       selectMesMedios.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
       selectMesGrafico.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
       selectCCMain.innerHTML = '<option value="">🏢 Todos los Centros de Costos</option>';
-      selectTipoMain.innerHTML = '<option value="">📂 Todos los Tipos</option>';
 
       let mesesUnicos = [...new Set(data.map(r => getMesNormalizado(r)).filter(Boolean))];
       mesesUnicos.sort((a, b) => {
@@ -290,41 +294,40 @@
         return a.localeCompare(b);
       });
 
-      const ccUnicos = [...new Set(data.map(r => getKey(r, "Centro de Costos") || getKey(r, "Centro")).filter(Boolean))];
-      const tiposUnicos = [...new Set(data.map(r => getKey(r, "Tipo") || getKey(r, "Año")).filter(Boolean))];
-
       mesesUnicos.forEach(mes => {
         const opt1 = document.createElement('option'); opt1.value = mes; opt1.textContent = mes; selectMesMain.appendChild(opt1);
         const opt2 = document.createElement('option'); opt2.value = mes; opt2.textContent = mes; selectMesMedios.appendChild(opt2);
         const opt3 = document.createElement('option'); opt3.value = mes; opt3.textContent = mes; selectMesGrafico.appendChild(opt3);
       });
 
-      ccUnicos.forEach(cc => {
+      CC_MAIN_OPTIONS.forEach(cc => {
         const option = document.createElement('option');
         option.value = cc; option.textContent = cc;
         selectCCMain.appendChild(option);
       });
-
-      tiposUnicos.forEach(tipo => {
-        const option = document.createElement('option');
-        option.value = tipo; option.textContent = tipo;
-        selectTipoMain.appendChild(option);
-      });
     }
 
+    // Filtro para las tarjetas KPI: aplica búsqueda + mes + centro de costos
     function getFilteredDataMain() {
       const searchTerm = document.getElementById('searchMain').value.toLowerCase();
       const selectedMes = document.getElementById('filterMesMain').value;
       const selectedCC = document.getElementById('filterCCMain').value;
-      const selectedTipo = document.getElementById('filterTipoMain').value;
 
       return globalData.filter(row => {
         const matchesSearch = Object.values(row).some(val => String(val).toLowerCase().includes(searchTerm));
         const rowMes = getMesNormalizado(row);
         const rowCC = getKey(row, "Centro de Costos") || getKey(row, "Centro");
-        const rowTipo = getKey(row, "Tipo") || getKey(row, "Año");
 
-        return matchesSearch && (!selectedMes || rowMes === selectedMes) && (!selectedCC || rowCC === selectedCC) && (!selectedTipo || rowTipo === selectedTipo);
+        return matchesSearch && (!selectedMes || rowMes === selectedMes) && (!selectedCC || rowCC === selectedCC);
+      });
+    }
+
+    // Filtro exclusivo para las gráficas de Visión General: NO se ve afectado por mes ni centro de costos
+    function getFilteredDataMainChart() {
+      const searchTerm = document.getElementById('searchMain').value.toLowerCase();
+
+      return globalData.filter(row => {
+        return Object.values(row).some(val => String(val).toLowerCase().includes(searchTerm));
       });
     }
 
@@ -352,20 +355,17 @@
       const btnMedios = document.getElementById('btnSectionMedios');
       const secVisao = document.getElementById('sectionVisaoGeral');
       const secMedios = document.getElementById('sectionMedios');
-      const body = document.getElementById('mainBody');
 
       if (sec === 'MEDIOS') {
         btnMedios.className = "px-4 py-2 rounded-lg bg-[#e11d48] text-white shadow-sm transition";
-        btnAll.className = "px-4 py-2 rounded-lg text-slate-300 hover:text-white transition";
+        btnAll.className = "px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition";
         secVisao.classList.add('hidden');
         secMedios.classList.remove('hidden');
-        body.className = "bg-slate-50 text-slate-800 min-h-screen p-4 md:p-6 transition-colors duration-300";
       } else {
-        btnAll.className = "px-4 py-2 rounded-lg bg-blue-600 text-white shadow-sm transition";
-        btnMedios.className = "px-4 py-2 rounded-lg text-slate-300 hover:text-white transition";
+        btnAll.className = "px-4 py-2 rounded-lg bg-[#e11d48] text-white shadow-sm transition";
+        btnMedios.className = "px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition";
         secVisao.classList.remove('hidden');
         secMedios.classList.add('hidden');
-        body.className = "bg-[#0b0f19] text-white min-h-screen p-4 md:p-6 transition-colors duration-300";
       }
       renderDashboard();
     }
@@ -394,9 +394,11 @@
 
     function renderDashboard() {
       if (currentSection === 'ALL') {
-        const dataMain = getFilteredDataMain();
-        renderKPIs(dataMain);
-        renderChartMain(dataMain);
+        const dataMainKPI = getFilteredDataMain();
+        const dataMainChart = getFilteredDataMainChart();
+        renderKPIs(dataMainKPI);
+        renderChartMain(dataMainChart);
+        renderChartTopMarcas(dataMainChart);
       } else {
         const dataMedios = getFilteredDataMedios();
         renderPivoteMarcas(dataMedios);
@@ -406,27 +408,30 @@
     }
 
     function renderKPIs(data) {
-      const totalMonto = data.reduce((sum, row) => sum + parseMonto(row[montoKey]), 0);
-      const totalRegistros = data.length;
-      const promedio = totalRegistros > 0 ? (totalMonto / totalRegistros) : 0;
-      const clientesUnicos = new Set(data.map(r => getKey(r, "Cliente")).filter(Boolean)).size;
+      const rows2026 = data.filter(r => getTipoRow(r) === "2026");
+      const rows2025 = data.filter(r => getTipoRow(r) === "2025");
+      const rowsProy = data.filter(r => getTipoRow(r) === "proyeccion");
+
+      const totalVentas2026 = rows2026.reduce((sum, row) => sum + parseMonto(row[montoKey]), 0);
+      const totalVentas2025 = rows2025.reduce((sum, row) => sum + parseMonto(row[montoKey]), 0);
+      const totalProy2026 = rowsProy.reduce((sum, row) => sum + parseMonto(row[montoKey]), 0);
+
+      const cumplimiento = totalProy2026 > 0 ? (totalVentas2026 / totalProy2026 * 100) : 0;
+      const crecimiento = totalVentas2025 > 0 ? ((totalVentas2026 - totalVentas2025) / totalVentas2025 * 100) : 0;
+      const esPositivo = crecimiento >= 0;
 
       document.getElementById('kpis').innerHTML = `
-        <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 shadow-lg">
-          <p class="text-xs text-slate-400 uppercase font-bold tracking-wider">Monto Total</p>
-          <p class="text-3xl font-extrabold text-emerald-400 mt-2">$${totalMonto.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Ventas 2026 (Monto Total)</p>
+          <p class="text-3xl font-extrabold text-emerald-600 mt-2">$${totalVentas2026.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
         </div>
-        <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 shadow-lg">
-          <p class="text-xs text-slate-400 uppercase font-bold tracking-wider">Promedio por Registro</p>
-          <p class="text-3xl font-extrabold text-blue-400 mt-2">$${promedio.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Cumplimiento vs Proyección 2026</p>
+          <p class="text-3xl font-extrabold text-[#e11d48] mt-2">${cumplimiento.toFixed(1)}%</p>
         </div>
-        <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 shadow-lg">
-          <p class="text-xs text-slate-400 uppercase font-bold tracking-wider">Total Clientes</p>
-          <p class="text-3xl font-extrabold text-purple-400 mt-2">${clientesUnicos}</p>
-        </div>
-        <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 shadow-lg">
-          <p class="text-xs text-slate-400 uppercase font-bold tracking-wider">Total Registros</p>
-          <p class="text-3xl font-extrabold text-amber-400 mt-2">${totalRegistros}</p>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Crecimiento Ventas 2026 vs 2025</p>
+          <p class="text-3xl font-extrabold ${esPositivo ? 'text-emerald-600' : 'text-red-600'} mt-2">${esPositivo ? '+' : ''}${crecimiento.toFixed(1)}%</p>
         </div>
       `;
     }
@@ -492,21 +497,66 @@
         data: {
           labels: meses.map(m => m.toUpperCase()),
           datasets: [
-            { type: 'bar', label: 'Ventas 2025', data: data2025, backgroundColor: '#3b82f6' },
-            { type: 'bar', label: 'Ventas 2026', data: data2026, backgroundColor: '#10b981' },
-            { type: 'line', label: 'Proyección 2026', data: dataProy, borderColor: '#f59e0b', backgroundColor: '#f59e0b', borderWidth: 3, fill: false, tension: 0.3, pointRadius: 5 }
+            { type: 'bar', label: 'Ventas_2026', data: data2026, backgroundColor: '#e11d48', borderRadius: 4 },
+            { type: 'bar', label: 'Ventas_2025', data: data2025, backgroundColor: '#cbd5e1', borderRadius: 4 },
+            { type: 'line', label: 'Ventas_Proyectadas_2026', data: dataProy, borderColor: '#475569', backgroundColor: '#000000', borderWidth: 2, fill: false, tension: 0.1, pointRadius: 4, pointBackgroundColor: '#000000' }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: { 
-            legend: { position: 'top', labels: { color: '#94a3b8' } },
+            legend: { position: 'top', labels: { color: '#334155', font: { weight: 'bold', size: 11 } } },
             datalabels: { display: false }
           },
           scales: {
-            x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
-            y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
+            x: { ticks: { color: '#475569', font: { weight: 'bold', size: 10 } }, grid: { display: false } },
+            y: { ticks: { color: '#64748b', callback: function(value) { return '$' + value.toLocaleString('es-EC'); } }, grid: { color: '#f1f5f9' } }
+          }
+        }
+      });
+    }
+
+    function renderChartTopMarcas(data) {
+      const marcasMap = {};
+
+      data.forEach(row => {
+        const tipoNorm = getTipoRow(row);
+        if (tipoNorm !== "2026" && tipoNorm !== "2025") return;
+        const marca = getKey(row, "Marca") || "Sin Marca";
+        const monto = parseMonto(row[montoKey]);
+        marcasMap[marca] = (marcasMap[marca] || 0) + monto;
+      });
+
+      const top5 = Object.entries(marcasMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+      if (chartTopMarcasInstance) chartTopMarcasInstance.destroy();
+      const ctx = document.getElementById('chartTopMarcas').getContext('2d');
+      chartTopMarcasInstance = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: top5.map(t => t[0]),
+          datasets: [{
+            data: top5.map(t => Math.round(t[1])),
+            backgroundColor: ['#e11d48', '#f43f5e', '#fb7185', '#fda4af', '#cbd5e1'],
+            borderColor: '#ffffff',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { color: '#334155', font: { size: 11, weight: 'bold' }, boxWidth: 12 } },
+            datalabels: {
+              color: '#ffffff',
+              font: { weight: 'bold', size: 11 },
+              formatter: function(value, context) {
+                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                const pct = total > 0 ? Math.round(value / total * 100) : 0;
+                return pct + '%';
+              }
+            }
           }
         }
       });
@@ -628,7 +678,6 @@
     document.getElementById('searchMain').addEventListener('input', renderDashboard);
     document.getElementById('filterMesMain').addEventListener('change', renderDashboard);
     document.getElementById('filterCCMain').addEventListener('change', renderDashboard);
-    document.getElementById('filterTipoMain').addEventListener('change', renderDashboard);
 
     document.getElementById('searchMedios').addEventListener('input', renderDashboard);
     document.getElementById('filterMesMedios').addEventListener('change', renderDashboard);
