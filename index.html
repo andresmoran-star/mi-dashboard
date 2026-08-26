@@ -128,6 +128,8 @@
         <button onclick="resetMarcaFilter()" class="font-bold underline hover:text-rose-800">Quitar filtro de marca</button>
       </div>
 
+      <div id="kpisMedios" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
+
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- IZQUIERDA: Tabla Pivote por Marcas -->
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
@@ -170,7 +172,7 @@
           <h2 class="text-base font-bold text-slate-800">📊 Ventas por Medio</h2>
           <span class="text-xs font-medium text-slate-400">Ventas 2026 · se actualiza según la marca seleccionada</span>
         </div>
-        <div class="h-96"><canvas id="chartVentasPorMedio"></canvas></div>
+        <div id="ventasPorMedioList" class="space-y-2.5 max-h-[480px] overflow-y-auto pr-2"></div>
       </div>
 
     </div>
@@ -200,6 +202,8 @@
         <span id="activeFilterTextFee">Filtro aplicado por Marca: Todos</span>
         <button onclick="resetMarcaFeeFilter()" class="font-bold underline hover:text-rose-800">Quitar filtro de marca</button>
       </div>
+
+      <div id="kpisFee" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- IZQUIERDA: Tabla Pivote por Marcas -->
@@ -266,6 +270,8 @@
         <button onclick="resetMarcaTecFilter()" class="font-bold underline hover:text-rose-800">Quitar filtro de marca</button>
       </div>
 
+      <div id="kpisTec" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
+
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- IZQUIERDA: Tabla Pivote por Marcas -->
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
@@ -306,7 +312,7 @@
           <h2 class="text-base font-bold text-slate-800">📊 Ventas por Medio</h2>
           <span class="text-xs font-medium text-slate-400">Ventas 2026 · se actualiza según la marca seleccionada</span>
         </div>
-        <div class="h-96"><canvas id="chartVentasPorMedioTec"></canvas></div>
+        <div id="ventasPorMedioListTec" class="space-y-2.5 max-h-[480px] overflow-y-auto pr-2"></div>
       </div>
 
     </div>
@@ -629,22 +635,25 @@
         renderChartTopMarcas(dataMainChart);
       } else if (currentSection === 'MEDIOS') {
         const dataMedios = getFilteredDataMedios();
+        renderKPIsGeneric(dataMedios, 'kpisMedios', 'Ventas 2026');
         renderPivoteMarcas(dataMedios);
         renderChartMedios(dataMedios);
-        renderVentasPorMedioChart(dataMedios, 'chartVentasPorMedio');
+        renderVentasPorMedioList(dataMedios, 'ventasPorMedioList');
       } else if (currentSection === 'FEE') {
         const dataFee = getFilteredDataServicioFee();
+        renderKPIsGeneric(dataFee, 'kpisFee', 'Ventas 2026');
         renderPivoteMarcasFee(dataFee);
         renderChartFee(dataFee);
       } else if (currentSection === 'TEC') {
         const dataTec = getFilteredDataTec();
+        renderKPIsGeneric(dataTec, 'kpisTec', 'Ventas 2026');
         renderPivoteMarcasTec(dataTec);
         renderChartTec(dataTec);
-        renderVentasPorMedioChart(dataTec, 'chartVentasPorMedioTec');
+        renderVentasPorMedioList(dataTec, 'ventasPorMedioListTec');
       }
     }
 
-    function renderKPIs(data) {
+    function renderKPIsGeneric(data, containerId, ventasLabel) {
       const rows2026 = data.filter(r => getTipoRow(r) === "2026");
       const rows2025 = data.filter(r => getTipoRow(r) === "2025");
       const rowsProy = data.filter(r => getTipoRow(r) === "proyeccion");
@@ -671,9 +680,12 @@
       const esPositivo = crecimiento >= 0;
       const mesLimite = maxIdx >= 0 ? MESES_ORDEN[maxIdx] : "";
 
-      document.getElementById('kpis').innerHTML = `
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      container.innerHTML = `
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Ventas 2026 (Monto Total)</p>
+          <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">${ventasLabel || 'Ventas 2026'}</p>
           <p class="text-3xl font-extrabold text-emerald-600 mt-2">$${Math.round(totalVentas2026).toLocaleString('es-EC')}</p>
         </div>
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
@@ -686,6 +698,10 @@
           ${mesLimite ? `<p class="text-[11px] text-slate-400 mt-1">Comparado hasta ${mesLimite} en ambos años</p>` : ''}
         </div>
       `;
+    }
+
+    function renderKPIs(data) {
+      renderKPIsGeneric(data, 'kpis', 'Ventas 2026 (Monto Total)');
     }
 
     function renderPivoteMarcas(mediosData) {
@@ -976,7 +992,7 @@
       }).join('');
     }
 
-    function renderVentasPorMedioChart(data, canvasId) {
+    function renderVentasPorMedioList(data, containerId) {
       const medioMap = {};
 
       data.forEach(row => {
@@ -987,45 +1003,31 @@
       });
 
       const entries = Object.entries(medioMap).sort((a, b) => b[1] - a[1]);
+      const total = entries.reduce((s, e) => s + e[1], 0);
+      const maxValor = entries.length > 0 ? entries[0][1] : 0;
 
-      const canvasEl = document.getElementById(canvasId);
-      if (!canvasEl) return;
+      const container = document.getElementById(containerId);
+      if (!container) return;
 
-      if (ventasPorMedioInstances[canvasId]) ventasPorMedioInstances[canvasId].destroy();
+      if (entries.length === 0) {
+        container.innerHTML = `<p class="text-sm text-slate-400 text-center py-6">Sin datos para estos filtros.</p>`;
+        return;
+      }
 
-      const ctx = canvasEl.getContext('2d');
-      ventasPorMedioInstances[canvasId] = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: entries.map(e => e[0]),
-          datasets: [{
-            label: 'Ventas 2026',
-            data: entries.map(e => Math.round(e[1])),
-            backgroundColor: '#e11d48',
-            borderRadius: 4
-          }]
-        },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            datalabels: { display: false },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return 'Ventas 2026: $' + Math.round(context.parsed.x).toLocaleString('es-EC');
-                }
-              }
-            }
-          },
-          scales: {
-            x: { ticks: { color: '#64748b', callback: function(value) { return '$' + value.toLocaleString('es-EC'); } }, grid: { color: '#f1f5f9' } },
-            y: { ticks: { color: '#334155', font: { weight: 'bold', size: 11 } }, grid: { display: false } }
-          }
-        }
-      });
+      container.innerHTML = entries.map(([medio, monto]) => {
+        const pctTotal = total > 0 ? (monto / total * 100) : 0;
+        const pctBarra = maxValor > 0 ? (monto / maxValor * 100) : 0;
+        return `
+          <div class="flex items-center gap-3">
+            <div class="w-28 sm:w-32 shrink-0 text-sm font-medium text-slate-700 truncate" title="${medio}">${medio}</div>
+            <div class="flex-1 bg-slate-100 rounded-full h-3 overflow-hidden">
+              <div class="h-3 bg-[#e11d48] rounded-full" style="width:${pctBarra.toFixed(1)}%"></div>
+            </div>
+            <div class="w-24 sm:w-28 shrink-0 text-right text-sm font-semibold text-slate-800">$${Math.round(monto).toLocaleString('es-EC')}</div>
+            <div class="w-12 shrink-0 text-right text-xs font-bold text-[#e11d48]">${pctTotal.toFixed(1)}%</div>
+          </div>
+        `;
+      }).join('');
     }
 
     function renderChartMedios(data) {
