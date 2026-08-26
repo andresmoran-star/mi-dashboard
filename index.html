@@ -1,3 +1,6 @@
+Perfecto, la quito.Verifico que no queden referencias huérfanas y que los divs estén balanceados:Todo limpio y balanceado. Ahora leo el archivo completo para dártelo:Ahora tengo todo el archivo. Aquí está el código completo, sin la pantalla de acceso:
+
+```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -29,6 +32,9 @@
         </button>
         <button id="btnSectionMedios" onclick="switchSection('MEDIOS')" class="px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition">
           🎯 Ejecución de Medios
+        </button>
+        <button id="btnSectionFee" onclick="switchSection('FEE')" class="px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition">
+          🧾 Servicio fee
         </button>
       </div>
 
@@ -150,6 +156,71 @@
 
     </div>
 
+    <!-- PANTALLA 3: SERVICIO FEE -->
+    <div id="sectionServicioFee" class="hidden space-y-6">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Buscador por Marca</label>
+          <input type="text" id="searchServicioFee" placeholder="🔍 Buscar marca..." 
+            class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mes General Servicio fee</label>
+          <select id="filterMesServicioFee" class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
+            <option value="">🗓️ Todos los Meses</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <button onclick="resetServicioFeeFilters()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold p-2.5 rounded-xl transition text-sm border border-slate-200">
+            🔄 Limpiar Filtros
+          </button>
+        </div>
+      </div>
+
+      <div id="activeFilterBadgeFee" class="hidden bg-rose-50 border border-rose-200 text-[#e11d48] px-4 py-2 rounded-xl text-xs font-semibold flex justify-between items-center">
+        <span id="activeFilterTextFee">Filtro aplicado por Marca: Todos</span>
+        <button onclick="resetMarcaFeeFilter()" class="font-bold underline hover:text-rose-800">Quitar filtro de marca</button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- IZQUIERDA: Tabla Pivote por Marcas -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+          <div class="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+            <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-[#e11d48]"></span>
+              Pivote de Marcas (% Cumplimiento)
+            </h2>
+            <span class="text-xs text-slate-400 font-medium">* Clic para filtrar</span>
+          </div>
+          <div class="overflow-x-auto max-h-[500px]">
+            <table class="w-full text-left text-sm">
+              <thead class="sticky top-0 bg-[#e11d48] text-white uppercase text-xs font-bold tracking-wider">
+                <tr>
+                  <th class="px-4 py-3 border-r border-rose-500">Marcas</th>
+                  <th class="px-4 py-3 text-right border-r border-rose-500">Ventas 2026</th>
+                  <th class="px-4 py-3 text-right border-r border-rose-500">Ventas 2025</th>
+                  <th class="px-4 py-3 text-right border-r border-rose-500">% Variación</th>
+                  <th class="px-4 py-3 text-right border-r border-rose-500">Proyección 2026</th>
+                  <th class="px-4 py-3 text-right">% Cumpl.</th>
+                </tr>
+              </thead>
+              <tbody id="pivote-body-fee" class="divide-y divide-slate-100 text-slate-700"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- DERECHA: Gráfico de Barras / Líneas Comparativo -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-base font-bold text-slate-800">Ventas por C. Costos</h2>
+            <span class="text-xs font-medium text-slate-400">Barras: 2026/2025 | Línea: Proyección</span>
+          </div>
+          <div class="h-[420px]"><canvas id="chartComparativoFee"></canvas></div>
+        </div>
+      </div>
+
+    </div>
+
   </div>
 
   <script>
@@ -159,9 +230,11 @@
     let globalData = [];
     let montoKey = "";
     let selectedMarca = "";
+    let selectedMarcaFee = "";
     let currentSection = "ALL";
     let chartMainInstance = null;
     let chartMediosInstance = null;
+    let chartFeeInstance = null;
     let chartTopMarcasInstance = null;
     let selectedMesChart = "";
     let lastMainChartMeses = [];
@@ -260,10 +333,12 @@
     function populateFilters(data) {
       const selectMesMain = document.getElementById('filterMesMain');
       const selectMesMedios = document.getElementById('filterMesMedios');
+      const selectMesFee = document.getElementById('filterMesServicioFee');
       const selectCCMain = document.getElementById('filterCCMain');
 
       selectMesMain.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
       selectMesMedios.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
+      selectMesFee.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
       selectCCMain.innerHTML = '<option value="">🏢 Todos los Centros de Costos</option>';
 
       let mesesUnicos = [...new Set(data.map(r => getMesNormalizado(r)).filter(Boolean))];
@@ -277,6 +352,7 @@
       mesesUnicos.forEach(mes => {
         const opt1 = document.createElement('option'); opt1.value = mes; opt1.textContent = mes; selectMesMain.appendChild(opt1);
         const opt2 = document.createElement('option'); opt2.value = mes; opt2.textContent = mes; selectMesMedios.appendChild(opt2);
+        const opt3 = document.createElement('option'); opt3.value = mes; opt3.textContent = mes; selectMesFee.appendChild(opt3);
       });
 
       CC_MAIN_OPTIONS.forEach(cc => {
@@ -328,24 +404,44 @@
       });
     }
 
+    function getFilteredDataServicioFee() {
+      const searchTerm = document.getElementById('searchServicioFee').value.toLowerCase();
+      const selectedMes = document.getElementById('filterMesServicioFee').value;
+
+      return globalData.filter(row => {
+        const rowCC = getKey(row, "Centro de Costos") || getKey(row, "Centro");
+        const rowMarca = getKey(row, "Marca");
+        const rowMes = getMesNormalizado(row);
+
+        const matchesFeeCC = rowCC.toLowerCase().includes("fee");
+        const matchesSearch = !searchTerm || rowMarca.toLowerCase().includes(searchTerm);
+        const matchesMes = !selectedMes || rowMes === selectedMes;
+        const matchesMarca = !selectedMarcaFee || rowMarca.toLowerCase() === selectedMarcaFee.toLowerCase();
+
+        return matchesFeeCC && matchesSearch && matchesMes && matchesMarca;
+      });
+    }
+
     function switchSection(sec) {
       currentSection = sec;
       const btnAll = document.getElementById('btnSectionAll');
       const btnMedios = document.getElementById('btnSectionMedios');
+      const btnFee = document.getElementById('btnSectionFee');
       const secVisao = document.getElementById('sectionVisaoGeral');
       const secMedios = document.getElementById('sectionMedios');
+      const secFee = document.getElementById('sectionServicioFee');
 
-      if (sec === 'MEDIOS') {
-        btnMedios.className = "px-4 py-2 rounded-lg bg-[#e11d48] text-white shadow-sm transition";
-        btnAll.className = "px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition";
-        secVisao.classList.add('hidden');
-        secMedios.classList.remove('hidden');
-      } else {
-        btnAll.className = "px-4 py-2 rounded-lg bg-[#e11d48] text-white shadow-sm transition";
-        btnMedios.className = "px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition";
-        secVisao.classList.remove('hidden');
-        secMedios.classList.add('hidden');
-      }
+      const activeClass = "px-4 py-2 rounded-lg bg-[#e11d48] text-white shadow-sm transition";
+      const inactiveClass = "px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition";
+
+      btnAll.className = sec === 'ALL' ? activeClass : inactiveClass;
+      btnMedios.className = sec === 'MEDIOS' ? activeClass : inactiveClass;
+      btnFee.className = sec === 'FEE' ? activeClass : inactiveClass;
+
+      secVisao.classList.toggle('hidden', sec !== 'ALL');
+      secMedios.classList.toggle('hidden', sec !== 'MEDIOS');
+      secFee.classList.toggle('hidden', sec !== 'FEE');
+
       renderDashboard();
     }
 
@@ -368,6 +464,25 @@
       resetMarcaFilter();
     }
 
+    function filterByMarcaFee(marca) {
+      selectedMarcaFee = marca;
+      document.getElementById('activeFilterBadgeFee').classList.remove('hidden');
+      document.getElementById('activeFilterTextFee').innerText = `Filtro aplicado por Marca: ${marca}`;
+      renderDashboard();
+    }
+
+    function resetMarcaFeeFilter() {
+      selectedMarcaFee = "";
+      document.getElementById('activeFilterBadgeFee').classList.add('hidden');
+      renderDashboard();
+    }
+
+    function resetServicioFeeFilters() {
+      document.getElementById('searchServicioFee').value = "";
+      document.getElementById('filterMesServicioFee').value = "";
+      resetMarcaFeeFilter();
+    }
+
     function renderDashboard() {
       if (currentSection === 'ALL') {
         const dataMainKPI = getFilteredDataMain();
@@ -375,10 +490,14 @@
         renderKPIs(dataMainKPI);
         renderChartMain(dataMainChart);
         renderChartTopMarcas(dataMainChart);
-      } else {
+      } else if (currentSection === 'MEDIOS') {
         const dataMedios = getFilteredDataMedios();
         renderPivoteMarcas(dataMedios);
         renderChartMedios(dataMedios);
+      } else if (currentSection === 'FEE') {
+        const dataFee = getFilteredDataServicioFee();
+        renderPivoteMarcasFee(dataFee);
+        renderChartFee(dataFee);
       }
     }
 
@@ -477,6 +596,68 @@
 
         return `
           <tr onclick="filterByMarca('${marca}')" class="${bgRow} ${activeClass} hover:bg-rose-50/80 cursor-pointer transition">
+            <td class="px-4 py-3 font-medium text-slate-800">${marca}</td>
+            <td class="px-4 py-3 text-right font-semibold text-slate-900">$${Math.round(vals.v2026).toLocaleString('es-EC')}</td>
+            <td class="px-4 py-3 text-right text-slate-700">$${Math.round(vals.v2025).toLocaleString('es-EC')}</td>
+            <td class="px-4 py-3 text-right font-bold ${esPositivo ? 'text-emerald-600' : 'text-red-600'}">${esPositivo ? '+' : ''}${variacion}%</td>
+            <td class="px-4 py-3 text-right text-slate-700">$${Math.round(vals.proy2026).toLocaleString('es-EC')}</td>
+            <td class="px-4 py-3 text-right font-bold ${cumplimiento >= 100 ? 'text-emerald-600' : 'text-slate-700'}">${cumplimiento}%</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderPivoteMarcasFee(mediosData) {
+      // Determinar el último mes con datos de Ventas 2026, para comparar 2025 en el mismo periodo
+      const rows2026Disponibles = mediosData.filter(r => getTipoRow(r) === "2026");
+      const mesesCon2026 = [...new Set(rows2026Disponibles.map(r => getMesNormalizado(r)).filter(Boolean))];
+      const idxMeses = mesesCon2026.map(m => MESES_ORDEN.indexOf(m)).filter(i => i !== -1);
+      const maxIdx = idxMeses.length > 0 ? Math.max(...idxMeses) : -1;
+
+      const dentroDelPeriodo = (row) => {
+        if (maxIdx < 0) return true;
+        const idx = MESES_ORDEN.indexOf(getMesNormalizado(row));
+        return idx !== -1 && idx <= maxIdx;
+      };
+
+      const marcasMap = {};
+
+      mediosData.forEach(row => {
+        const tipoNorm = getTipoRow(row);
+        if (tipoNorm !== "2026" && tipoNorm !== "2025" && tipoNorm !== "proyeccion") return;
+        if ((tipoNorm === "2026" || tipoNorm === "2025") && !dentroDelPeriodo(row)) return;
+
+        const marca = getKey(row, "Marca") || "Sin Marca";
+        const monto = parseMonto(row[montoKey]);
+
+        if (!marcasMap[marca]) {
+          marcasMap[marca] = { v2026: 0, v2025: 0, proy2026: 0 };
+        }
+
+        if (tipoNorm === "proyeccion") {
+          marcasMap[marca].proy2026 += monto;
+        } else if (tipoNorm === "2026") {
+          marcasMap[marca].v2026 += monto;
+        } else if (tipoNorm === "2025") {
+          marcasMap[marca].v2025 += monto;
+        }
+      });
+
+      // Ordenar de mayor a menor según Ventas 2026
+      const filas = Object.entries(marcasMap).sort((a, b) => b[1].v2026 - a[1].v2026);
+
+      const tbody = document.getElementById('pivote-body-fee');
+      tbody.innerHTML = filas.map(([marca, vals], idx) => {
+        const cumplimiento = vals.proy2026 > 0 ? Math.round((vals.v2026 / vals.proy2026) * 100) : 0;
+        const variacion = vals.v2025 > 0
+          ? Math.round(((vals.v2026 - vals.v2025) / vals.v2025) * 100)
+          : (vals.v2026 > 0 ? 100 : 0);
+        const esPositivo = variacion >= 0;
+        const bgRow = idx % 2 === 0 ? "bg-white" : "bg-slate-50/60";
+        const activeClass = selectedMarcaFee.toLowerCase() === marca.toLowerCase() ? "bg-rose-50 font-bold border-l-4 border-l-[#e11d48]" : "";
+
+        return `
+          <tr onclick="filterByMarcaFee('${marca}')" class="${bgRow} ${activeClass} hover:bg-rose-50/80 cursor-pointer transition">
             <td class="px-4 py-3 font-medium text-slate-800">${marca}</td>
             <td class="px-4 py-3 text-right font-semibold text-slate-900">$${Math.round(vals.v2026).toLocaleString('es-EC')}</td>
             <td class="px-4 py-3 text-right text-slate-700">$${Math.round(vals.v2025).toLocaleString('es-EC')}</td>
@@ -649,6 +830,36 @@
       });
     }
 
+    function renderChartFee(data) {
+      const { meses, data2025, data2026, dataProy } = getMonthlyData(data);
+
+      if (chartFeeInstance) chartFeeInstance.destroy();
+      const ctx = document.getElementById('chartComparativoFee').getContext('2d');
+      chartFeeInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: meses.map(m => m.toUpperCase()),
+          datasets: [
+            { type: 'bar', label: 'Ventas_2026', data: data2026, backgroundColor: '#e11d48', borderRadius: 4 },
+            { type: 'bar', label: 'Ventas_2025', data: data2025, backgroundColor: '#cbd5e1', borderRadius: 4 },
+            { type: 'line', label: 'Ventas_Proyectadas_2026', data: dataProy, borderColor: '#475569', backgroundColor: '#000000', borderWidth: 2, fill: false, tension: 0.1, pointRadius: 4, pointBackgroundColor: '#000000' }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { 
+            legend: { position: 'top', labels: { color: '#334155', font: { weight: 'bold', size: 11 } } },
+            datalabels: { display: false }
+          },
+          scales: {
+            x: { ticks: { color: '#475569', font: { weight: 'bold', size: 10 } }, grid: { display: false } },
+            y: { ticks: { color: '#64748b', callback: function(value) { return '$' + (value / 1000) + ' mil'; } }, grid: { color: '#f1f5f9' } }
+          }
+        }
+      });
+    }
+
     // Escuchadores de eventos
     document.getElementById('searchMain').addEventListener('input', renderDashboard);
     document.getElementById('filterMesMain').addEventListener('change', renderDashboard);
@@ -656,6 +867,10 @@
 
     document.getElementById('searchMedios').addEventListener('input', renderDashboard);
     document.getElementById('filterMesMedios').addEventListener('change', renderDashboard);
+
+    document.getElementById('searchServicioFee').addEventListener('input', renderDashboard);
+    document.getElementById('filterMesServicioFee').addEventListener('change', renderDashboard);
   </script>
 </body>
 </html>
+```
