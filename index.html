@@ -1,6 +1,3 @@
-Perfecto, la quito.Verifico que no queden referencias huérfanas y que los divs estén balanceados:Todo limpio y balanceado. Ahora leo el archivo completo para dártelo:Ahora tengo todo el archivo. Aquí está el código completo, sin la pantalla de acceso:
-
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -36,6 +33,9 @@ Perfecto, la quito.Verifico que no queden referencias huérfanas y que los divs 
         <button id="btnSectionFee" onclick="switchSection('FEE')" class="px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition">
           🧾 Servicio fee
         </button>
+        <button id="btnSectionTec" onclick="switchSection('TEC')" class="px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition">
+          💻 Proyectos tecnológicos
+        </button>
       </div>
 
       <div id="status" class="bg-yellow-50 text-yellow-600 px-4 py-2 rounded-lg border border-yellow-200 text-xs font-semibold animate-pulse">
@@ -43,7 +43,7 @@ Perfecto, la quito.Verifico que no queden referencias huérfanas y que los divs 
       </div>
     </div>
 
-    <!-- PANTALLA 1: VISIÓN GENERAL -->
+    <!-- PANTALLA 1: VISIÓN GENERAL (Fondo Oscuro Principal) -->
     <div id="sectionVisaoGeral" class="space-y-6">
       <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
@@ -86,7 +86,18 @@ Perfecto, la quito.Verifico que no queden referencias huérfanas y que los divs 
             </button>
           </div>
           <p class="text-xs text-slate-400 font-medium mb-2">* Clic en una barra del gráfico mensual para filtrar por ese mes</p>
-          <div class="h-96"><canvas id="chartTopMarcas"></canvas></div>
+          <div class="overflow-x-auto max-h-96">
+            <table class="w-full text-left text-sm">
+              <thead class="sticky top-0 bg-[#e11d48] text-white uppercase text-xs font-bold tracking-wider">
+                <tr>
+                  <th class="px-3 py-2 border-r border-rose-500">Marca</th>
+                  <th class="px-3 py-2 text-right border-r border-rose-500">Monto</th>
+                  <th class="px-3 py-2 text-right">% Total</th>
+                </tr>
+              </thead>
+              <tbody id="top-marcas-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -152,6 +163,14 @@ Perfecto, la quito.Verifico que no queden referencias huérfanas y que los divs 
           </div>
           <div class="h-[420px]"><canvas id="chartComparativoMedios"></canvas></div>
         </div>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-base font-bold text-slate-800">📊 Ventas por Medio</h2>
+          <span class="text-xs font-medium text-slate-400">Ventas 2026 · se actualiza según la marca seleccionada</span>
+        </div>
+        <div class="h-96"><canvas id="chartVentasPorMedio"></canvas></div>
       </div>
 
     </div>
@@ -221,6 +240,77 @@ Perfecto, la quito.Verifico que no queden referencias huérfanas y que los divs 
 
     </div>
 
+    <!-- PANTALLA 4: PROYECTOS TECNOLÓGICOS -->
+    <div id="sectionProyectosTec" class="hidden space-y-6">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Buscador por Marca</label>
+          <input type="text" id="searchTec" placeholder="🔍 Buscar marca..." 
+            class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mes General Proyectos tecnológicos</label>
+          <select id="filterMesTec" class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
+            <option value="">🗓️ Todos los Meses</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <button onclick="resetTecFilters()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold p-2.5 rounded-xl transition text-sm border border-slate-200">
+            🔄 Limpiar Filtros
+          </button>
+        </div>
+      </div>
+
+      <div id="activeFilterBadgeTec" class="hidden bg-rose-50 border border-rose-200 text-[#e11d48] px-4 py-2 rounded-xl text-xs font-semibold flex justify-between items-center">
+        <span id="activeFilterTextTec">Filtro aplicado por Marca: Todos</span>
+        <button onclick="resetMarcaTecFilter()" class="font-bold underline hover:text-rose-800">Quitar filtro de marca</button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- IZQUIERDA: Tabla Pivote por Marcas -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+          <div class="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+            <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-[#e11d48]"></span>
+              Pivote de Marcas (% Cumplimiento)
+            </h2>
+            <span class="text-xs text-slate-400 font-medium">* Clic para filtrar</span>
+          </div>
+          <div class="overflow-x-auto max-h-[500px]">
+            <table class="w-full text-left text-sm">
+              <thead class="sticky top-0 bg-[#e11d48] text-white uppercase text-xs font-bold tracking-wider">
+                <tr>
+                  <th class="px-4 py-3 border-r border-rose-500">Marcas</th>
+                  <th class="px-4 py-3 text-right border-r border-rose-500">Ventas 2026</th>
+                  <th class="px-4 py-3 text-right border-r border-rose-500">Proyección 2026</th>
+                  <th class="px-4 py-3 text-right">% Cumpl.</th>
+                </tr>
+              </thead>
+              <tbody id="pivote-body-tec" class="divide-y divide-slate-100 text-slate-700"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- DERECHA: Gráfico de Barras / Líneas Comparativo -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-base font-bold text-slate-800">Ventas por C. Costos</h2>
+            <span class="text-xs font-medium text-slate-400">Barras: 2026/2025 | Línea: Proyección</span>
+          </div>
+          <div class="h-[420px]"><canvas id="chartComparativoTec"></canvas></div>
+        </div>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-base font-bold text-slate-800">📊 Ventas por Medio</h2>
+          <span class="text-xs font-medium text-slate-400">Ventas 2026 · se actualiza según la marca seleccionada</span>
+        </div>
+        <div class="h-96"><canvas id="chartVentasPorMedioTec"></canvas></div>
+      </div>
+
+    </div>
+
   </div>
 
   <script>
@@ -231,13 +321,16 @@ Perfecto, la quito.Verifico que no queden referencias huérfanas y que los divs 
     let montoKey = "";
     let selectedMarca = "";
     let selectedMarcaFee = "";
+    let selectedMarcaTec = "";
     let currentSection = "ALL";
     let chartMainInstance = null;
     let chartMediosInstance = null;
     let chartFeeInstance = null;
+    let chartTecInstance = null;
     let chartTopMarcasInstance = null;
     let selectedMesChart = "";
     let lastMainChartMeses = [];
+    let ventasPorMedioInstances = {};
 
     const MESES_MAP = {
       "enero": "Enero", "ene": "Enero", "january": "Enero",
@@ -334,11 +427,13 @@ Perfecto, la quito.Verifico que no queden referencias huérfanas y que los divs 
       const selectMesMain = document.getElementById('filterMesMain');
       const selectMesMedios = document.getElementById('filterMesMedios');
       const selectMesFee = document.getElementById('filterMesServicioFee');
+      const selectMesTec = document.getElementById('filterMesTec');
       const selectCCMain = document.getElementById('filterCCMain');
 
       selectMesMain.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
       selectMesMedios.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
       selectMesFee.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
+      selectMesTec.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
       selectCCMain.innerHTML = '<option value="">🏢 Todos los Centros de Costos</option>';
 
       let mesesUnicos = [...new Set(data.map(r => getMesNormalizado(r)).filter(Boolean))];
@@ -353,6 +448,7 @@ Perfecto, la quito.Verifico que no queden referencias huérfanas y que los divs 
         const opt1 = document.createElement('option'); opt1.value = mes; opt1.textContent = mes; selectMesMain.appendChild(opt1);
         const opt2 = document.createElement('option'); opt2.value = mes; opt2.textContent = mes; selectMesMedios.appendChild(opt2);
         const opt3 = document.createElement('option'); opt3.value = mes; opt3.textContent = mes; selectMesFee.appendChild(opt3);
+        const opt4 = document.createElement('option'); opt4.value = mes; opt4.textContent = mes; selectMesTec.appendChild(opt4);
       });
 
       CC_MAIN_OPTIONS.forEach(cc => {
@@ -422,14 +518,34 @@ Perfecto, la quito.Verifico que no queden referencias huérfanas y que los divs 
       });
     }
 
+    function getFilteredDataTec() {
+      const searchTerm = document.getElementById('searchTec').value.toLowerCase();
+      const selectedMes = document.getElementById('filterMesTec').value;
+
+      return globalData.filter(row => {
+        const rowCC = getKey(row, "Centro de Costos") || getKey(row, "Centro");
+        const rowMarca = getKey(row, "Marca");
+        const rowMes = getMesNormalizado(row);
+
+        const matchesTecCC = rowCC.toLowerCase().includes("tecnol");
+        const matchesSearch = !searchTerm || rowMarca.toLowerCase().includes(searchTerm);
+        const matchesMes = !selectedMes || rowMes === selectedMes;
+        const matchesMarca = !selectedMarcaTec || rowMarca.toLowerCase() === selectedMarcaTec.toLowerCase();
+
+        return matchesTecCC && matchesSearch && matchesMes && matchesMarca;
+      });
+    }
+
     function switchSection(sec) {
       currentSection = sec;
       const btnAll = document.getElementById('btnSectionAll');
       const btnMedios = document.getElementById('btnSectionMedios');
       const btnFee = document.getElementById('btnSectionFee');
+      const btnTec = document.getElementById('btnSectionTec');
       const secVisao = document.getElementById('sectionVisaoGeral');
       const secMedios = document.getElementById('sectionMedios');
       const secFee = document.getElementById('sectionServicioFee');
+      const secTec = document.getElementById('sectionProyectosTec');
 
       const activeClass = "px-4 py-2 rounded-lg bg-[#e11d48] text-white shadow-sm transition";
       const inactiveClass = "px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition";
@@ -437,10 +553,12 @@ Perfecto, la quito.Verifico que no queden referencias huérfanas y que los divs 
       btnAll.className = sec === 'ALL' ? activeClass : inactiveClass;
       btnMedios.className = sec === 'MEDIOS' ? activeClass : inactiveClass;
       btnFee.className = sec === 'FEE' ? activeClass : inactiveClass;
+      btnTec.className = sec === 'TEC' ? activeClass : inactiveClass;
 
       secVisao.classList.toggle('hidden', sec !== 'ALL');
       secMedios.classList.toggle('hidden', sec !== 'MEDIOS');
       secFee.classList.toggle('hidden', sec !== 'FEE');
+      secTec.classList.toggle('hidden', sec !== 'TEC');
 
       renderDashboard();
     }
@@ -483,6 +601,25 @@ Perfecto, la quito.Verifico que no queden referencias huérfanas y que los divs 
       resetMarcaFeeFilter();
     }
 
+    function filterByMarcaTec(marca) {
+      selectedMarcaTec = marca;
+      document.getElementById('activeFilterBadgeTec').classList.remove('hidden');
+      document.getElementById('activeFilterTextTec').innerText = `Filtro aplicado por Marca: ${marca}`;
+      renderDashboard();
+    }
+
+    function resetMarcaTecFilter() {
+      selectedMarcaTec = "";
+      document.getElementById('activeFilterBadgeTec').classList.add('hidden');
+      renderDashboard();
+    }
+
+    function resetTecFilters() {
+      document.getElementById('searchTec').value = "";
+      document.getElementById('filterMesTec').value = "";
+      resetMarcaTecFilter();
+    }
+
     function renderDashboard() {
       if (currentSection === 'ALL') {
         const dataMainKPI = getFilteredDataMain();
@@ -494,10 +631,16 @@ Perfecto, la quito.Verifico que no queden referencias huérfanas y que los divs 
         const dataMedios = getFilteredDataMedios();
         renderPivoteMarcas(dataMedios);
         renderChartMedios(dataMedios);
+        renderVentasPorMedioChart(dataMedios, 'chartVentasPorMedio');
       } else if (currentSection === 'FEE') {
         const dataFee = getFilteredDataServicioFee();
         renderPivoteMarcasFee(dataFee);
         renderChartFee(dataFee);
+      } else if (currentSection === 'TEC') {
+        const dataTec = getFilteredDataTec();
+        renderPivoteMarcasTec(dataTec);
+        renderChartTec(dataTec);
+        renderVentasPorMedioChart(dataTec, 'chartVentasPorMedioTec');
       }
     }
 
@@ -669,6 +812,60 @@ Perfecto, la quito.Verifico que no queden referencias huérfanas y que los divs 
       }).join('');
     }
 
+    function renderPivoteMarcasTec(mediosData) {
+      // Determinar el último mes con datos de Ventas 2026, para comparar 2025 en el mismo periodo
+      const rows2026Disponibles = mediosData.filter(r => getTipoRow(r) === "2026");
+      const mesesCon2026 = [...new Set(rows2026Disponibles.map(r => getMesNormalizado(r)).filter(Boolean))];
+      const idxMeses = mesesCon2026.map(m => MESES_ORDEN.indexOf(m)).filter(i => i !== -1);
+      const maxIdx = idxMeses.length > 0 ? Math.max(...idxMeses) : -1;
+
+      const dentroDelPeriodo = (row) => {
+        if (maxIdx < 0) return true;
+        const idx = MESES_ORDEN.indexOf(getMesNormalizado(row));
+        return idx !== -1 && idx <= maxIdx;
+      };
+
+      const marcasMap = {};
+
+      mediosData.forEach(row => {
+        const tipoNorm = getTipoRow(row);
+        if (tipoNorm !== "2026" && tipoNorm !== "proyeccion") return;
+        if (tipoNorm === "2026" && !dentroDelPeriodo(row)) return;
+
+        const marca = getKey(row, "Marca") || "Sin Marca";
+        const monto = parseMonto(row[montoKey]);
+
+        if (!marcasMap[marca]) {
+          marcasMap[marca] = { v2026: 0, proy2026: 0 };
+        }
+
+        if (tipoNorm === "proyeccion") {
+          marcasMap[marca].proy2026 += monto;
+        } else if (tipoNorm === "2026") {
+          marcasMap[marca].v2026 += monto;
+        }
+      });
+
+      // Ordenar de mayor a menor según Ventas 2026
+      const filas = Object.entries(marcasMap).sort((a, b) => b[1].v2026 - a[1].v2026);
+
+      const tbody = document.getElementById('pivote-body-tec');
+      tbody.innerHTML = filas.map(([marca, vals], idx) => {
+        const cumplimiento = vals.proy2026 > 0 ? Math.round((vals.v2026 / vals.proy2026) * 100) : 0;
+        const bgRow = idx % 2 === 0 ? "bg-white" : "bg-slate-50/60";
+        const activeClass = selectedMarcaTec.toLowerCase() === marca.toLowerCase() ? "bg-rose-50 font-bold border-l-4 border-l-[#e11d48]" : "";
+
+        return `
+          <tr onclick="filterByMarcaTec('${marca}')" class="${bgRow} ${activeClass} hover:bg-rose-50/80 cursor-pointer transition">
+            <td class="px-4 py-3 font-medium text-slate-800">${marca}</td>
+            <td class="px-4 py-3 text-right font-semibold text-slate-900">$${Math.round(vals.v2026).toLocaleString('es-EC')}</td>
+            <td class="px-4 py-3 text-right text-slate-700">$${Math.round(vals.proy2026).toLocaleString('es-EC')}</td>
+            <td class="px-4 py-3 text-right font-bold ${cumplimiento >= 100 ? 'text-emerald-600' : 'text-slate-700'}">${cumplimiento}%</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
     function getMonthlyData(data) {
       // Extrae únicamente la lista sin duplicados ordenados cronológicamente
       let mesesUnicosSet = new Set(globalData.map(r => getMesNormalizado(r)).filter(Boolean));
@@ -744,6 +941,7 @@ Perfecto, la quito.Verifico que no queden referencias huérfanas y que los divs 
       });
 
       const top10 = Object.entries(marcasMap).sort((a, b) => b[1] - a[1]).slice(0, 10);
+      const totalTop10 = top10.reduce((s, t) => s + t[1], 0);
 
       // Actualizar título y badge de mes seleccionado
       const titleEl = document.getElementById('titleTopMarcas');
@@ -757,44 +955,74 @@ Perfecto, la quito.Verifico que no queden referencias huérfanas y que los divs 
         badgeEl.classList.add('hidden');
       }
 
-      const colorPalette = ['#e11d48', '#f43f5e', '#fb7185', '#fda4af', '#fecdd3', '#94a3b8', '#64748b', '#475569', '#334155', '#cbd5e1'];
+      const tbody = document.getElementById('top-marcas-body');
+      if (!tbody) return;
 
-      if (chartTopMarcasInstance) chartTopMarcasInstance.destroy();
-      const ctx = document.getElementById('chartTopMarcas').getContext('2d');
-      chartTopMarcasInstance = new Chart(ctx, {
-        type: 'pie',
+      if (top10.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-4 text-center text-slate-400">Sin datos para este periodo</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = top10.map(([marca, monto], idx) => {
+        const pct = totalTop10 > 0 ? Math.round(monto / totalTop10 * 100) : 0;
+        const bgRow = idx % 2 === 0 ? "bg-white" : "bg-slate-50/60";
+        return `
+          <tr class="${bgRow}">
+            <td class="px-3 py-2 font-medium text-slate-800">${marca}</td>
+            <td class="px-3 py-2 text-right font-semibold text-slate-900">$${Math.round(monto).toLocaleString('es-EC')}</td>
+            <td class="px-3 py-2 text-right font-bold text-[#e11d48]">${pct}%</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderVentasPorMedioChart(data, canvasId) {
+      const medioMap = {};
+
+      data.forEach(row => {
+        if (getTipoRow(row) !== "2026") return;
+        const medio = getKey(row, "Medio") || "Sin Especificar";
+        const monto = parseMonto(row[montoKey]);
+        medioMap[medio] = (medioMap[medio] || 0) + monto;
+      });
+
+      const entries = Object.entries(medioMap).sort((a, b) => b[1] - a[1]);
+
+      const canvasEl = document.getElementById(canvasId);
+      if (!canvasEl) return;
+
+      if (ventasPorMedioInstances[canvasId]) ventasPorMedioInstances[canvasId].destroy();
+
+      const ctx = canvasEl.getContext('2d');
+      ventasPorMedioInstances[canvasId] = new Chart(ctx, {
+        type: 'bar',
         data: {
-          labels: top10.map(t => t[0]),
+          labels: entries.map(e => e[0]),
           datasets: [{
-            data: top10.map(t => Math.round(t[1])),
-            backgroundColor: colorPalette,
-            borderColor: '#ffffff',
-            borderWidth: 2
+            label: 'Ventas 2026',
+            data: entries.map(e => Math.round(e[1])),
+            backgroundColor: '#e11d48',
+            borderRadius: 4
           }]
         },
         options: {
+          indexAxis: 'y',
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { position: 'bottom', labels: { color: '#334155', font: { size: 11, weight: 'bold' }, boxWidth: 12 } },
+            legend: { display: false },
+            datalabels: { display: false },
             tooltip: {
               callbacks: {
                 label: function(context) {
-                  const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                  const pct = total > 0 ? Math.round(context.parsed / total * 100) : 0;
-                  return `${context.label}: $${Math.round(context.parsed).toLocaleString('es-EC')} (${pct}%)`;
+                  return 'Ventas 2026: $' + Math.round(context.parsed.x).toLocaleString('es-EC');
                 }
               }
-            },
-            datalabels: {
-              color: '#ffffff',
-              font: { weight: 'bold', size: 11 },
-              formatter: function(value, context) {
-                const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                const pct = total > 0 ? Math.round(value / total * 100) : 0;
-                return pct + '%';
-              }
             }
+          },
+          scales: {
+            x: { ticks: { color: '#64748b', callback: function(value) { return '$' + value.toLocaleString('es-EC'); } }, grid: { color: '#f1f5f9' } },
+            y: { ticks: { color: '#334155', font: { weight: 'bold', size: 11 } }, grid: { display: false } }
           }
         }
       });
@@ -860,6 +1088,36 @@ Perfecto, la quito.Verifico que no queden referencias huérfanas y que los divs 
       });
     }
 
+    function renderChartTec(data) {
+      const { meses, data2025, data2026, dataProy } = getMonthlyData(data);
+
+      if (chartTecInstance) chartTecInstance.destroy();
+      const ctx = document.getElementById('chartComparativoTec').getContext('2d');
+      chartTecInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: meses.map(m => m.toUpperCase()),
+          datasets: [
+            { type: 'bar', label: 'Ventas_2026', data: data2026, backgroundColor: '#e11d48', borderRadius: 4 },
+            { type: 'bar', label: 'Ventas_2025', data: data2025, backgroundColor: '#cbd5e1', borderRadius: 4 },
+            { type: 'line', label: 'Ventas_Proyectadas_2026', data: dataProy, borderColor: '#475569', backgroundColor: '#000000', borderWidth: 2, fill: false, tension: 0.1, pointRadius: 4, pointBackgroundColor: '#000000' }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { 
+            legend: { position: 'top', labels: { color: '#334155', font: { weight: 'bold', size: 11 } } },
+            datalabels: { display: false }
+          },
+          scales: {
+            x: { ticks: { color: '#475569', font: { weight: 'bold', size: 10 } }, grid: { display: false } },
+            y: { ticks: { color: '#64748b', callback: function(value) { return '$' + (value / 1000) + ' mil'; } }, grid: { color: '#f1f5f9' } }
+          }
+        }
+      });
+    }
+
     // Escuchadores de eventos
     document.getElementById('searchMain').addEventListener('input', renderDashboard);
     document.getElementById('filterMesMain').addEventListener('change', renderDashboard);
@@ -870,7 +1128,9 @@ Perfecto, la quito.Verifico que no queden referencias huérfanas y que los divs 
 
     document.getElementById('searchServicioFee').addEventListener('input', renderDashboard);
     document.getElementById('filterMesServicioFee').addEventListener('change', renderDashboard);
+
+    document.getElementById('searchTec').addEventListener('input', renderDashboard);
+    document.getElementById('filterMesTec').addEventListener('change', renderDashboard);
   </script>
 </body>
 </html>
-```
