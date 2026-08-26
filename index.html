@@ -330,7 +330,7 @@
 
       <div id="kpisIncentivos" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="space-y-6">
         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-base font-bold text-slate-800">🏷️ Ventas por Marca</h2>
@@ -345,7 +345,7 @@
             <h2 class="text-base font-bold text-slate-800">📊 Ventas por Medio</h2>
             <span class="text-xs font-medium text-slate-400">Incentivos Medios · Año 2026</span>
           </div>
-          <div id="ventasPorMedioListIncentivos" class="h-[420px] overflow-y-auto pr-2 space-y-2.5"></div>
+          <div id="ventasPorMedioListIncentivos" class="h-[210px] overflow-y-auto pr-2 space-y-2.5"></div>
         </div>
       </div>
 
@@ -831,6 +831,15 @@
       // Ordenar de mayor a menor según Ventas 2026
       const filas = Object.entries(marcasMap).sort((a, b) => b[1].v2026 - a[1].v2026);
 
+      const totalV2026 = filas.reduce((s, [, v]) => s + v.v2026, 0);
+      const totalV2025 = filas.reduce((s, [, v]) => s + v.v2025, 0);
+      const totalProy2026 = filas.reduce((s, [, v]) => s + v.proy2026, 0);
+      const totalCumplimiento = totalProy2026 > 0 ? Math.round((totalV2026 / totalProy2026) * 100) : 0;
+      const totalVariacion = totalV2025 > 0
+        ? Math.round(((totalV2026 - totalV2025) / totalV2025) * 100)
+        : (totalV2026 > 0 ? 100 : 0);
+      const totalEsPositivo = totalVariacion >= 0;
+
       const tbody = document.getElementById('pivote-body');
       tbody.innerHTML = filas.map(([marca, vals], idx) => {
         const cumplimiento = vals.proy2026 > 0 ? Math.round((vals.v2026 / vals.proy2026) * 100) : 0;
@@ -851,7 +860,16 @@
             <td class="px-4 py-3 text-right font-bold ${cumplimiento >= 100 ? 'text-emerald-600' : 'text-slate-700'}">${cumplimiento}%</td>
           </tr>
         `;
-      }).join('');
+      }).join('') + `
+        <tr class="bg-slate-100 border-t-2 border-slate-300 font-bold">
+          <td class="px-4 py-3 text-slate-800">Total</td>
+          <td class="px-4 py-3 text-right text-slate-900">$${Math.round(totalV2026).toLocaleString('es-EC')}</td>
+          <td class="px-4 py-3 text-right text-slate-800">$${Math.round(totalV2025).toLocaleString('es-EC')}</td>
+          <td class="px-4 py-3 text-right ${totalEsPositivo ? 'text-emerald-600' : 'text-red-600'}">${totalEsPositivo ? '+' : ''}${totalVariacion}%</td>
+          <td class="px-4 py-3 text-right text-slate-800">$${Math.round(totalProy2026).toLocaleString('es-EC')}</td>
+          <td class="px-4 py-3 text-right ${totalCumplimiento >= 100 ? 'text-emerald-600' : 'text-slate-800'}">${totalCumplimiento}%</td>
+        </tr>
+      `;
     }
 
     function renderPivoteMarcasFee(mediosData) {
@@ -893,6 +911,15 @@
       // Ordenar de mayor a menor según Ventas 2026
       const filas = Object.entries(marcasMap).sort((a, b) => b[1].v2026 - a[1].v2026);
 
+      const totalV2026 = filas.reduce((s, [, v]) => s + v.v2026, 0);
+      const totalV2025 = filas.reduce((s, [, v]) => s + v.v2025, 0);
+      const totalProy2026 = filas.reduce((s, [, v]) => s + v.proy2026, 0);
+      const totalCumplimiento = totalProy2026 > 0 ? Math.round((totalV2026 / totalProy2026) * 100) : 0;
+      const totalVariacion = totalV2025 > 0
+        ? Math.round(((totalV2026 - totalV2025) / totalV2025) * 100)
+        : (totalV2026 > 0 ? 100 : 0);
+      const totalEsPositivo = totalVariacion >= 0;
+
       const tbody = document.getElementById('pivote-body-fee');
       tbody.innerHTML = filas.map(([marca, vals], idx) => {
         const cumplimiento = vals.proy2026 > 0 ? Math.round((vals.v2026 / vals.proy2026) * 100) : 0;
@@ -913,7 +940,16 @@
             <td class="px-4 py-3 text-right font-bold ${cumplimiento >= 100 ? 'text-emerald-600' : 'text-slate-700'}">${cumplimiento}%</td>
           </tr>
         `;
-      }).join('');
+      }).join('') + `
+        <tr class="bg-slate-100 border-t-2 border-slate-300 font-bold">
+          <td class="px-4 py-3 text-slate-800">Total</td>
+          <td class="px-4 py-3 text-right text-slate-900">$${Math.round(totalV2026).toLocaleString('es-EC')}</td>
+          <td class="px-4 py-3 text-right text-slate-800">$${Math.round(totalV2025).toLocaleString('es-EC')}</td>
+          <td class="px-4 py-3 text-right ${totalEsPositivo ? 'text-emerald-600' : 'text-red-600'}">${totalEsPositivo ? '+' : ''}${totalVariacion}%</td>
+          <td class="px-4 py-3 text-right text-slate-800">$${Math.round(totalProy2026).toLocaleString('es-EC')}</td>
+          <td class="px-4 py-3 text-right ${totalCumplimiento >= 100 ? 'text-emerald-600' : 'text-slate-800'}">${totalCumplimiento}%</td>
+        </tr>
+      `;
     }
 
     function renderPivoteMarcasTec(mediosData) {
@@ -953,6 +989,10 @@
       // Ordenar de mayor a menor según Ventas 2026
       const filas = Object.entries(marcasMap).sort((a, b) => b[1].v2026 - a[1].v2026);
 
+      const totalV2026 = filas.reduce((s, [, v]) => s + v.v2026, 0);
+      const totalProy2026 = filas.reduce((s, [, v]) => s + v.proy2026, 0);
+      const totalCumplimiento = totalProy2026 > 0 ? Math.round((totalV2026 / totalProy2026) * 100) : 0;
+
       const tbody = document.getElementById('pivote-body-tec');
       tbody.innerHTML = filas.map(([marca, vals], idx) => {
         const cumplimiento = vals.proy2026 > 0 ? Math.round((vals.v2026 / vals.proy2026) * 100) : 0;
@@ -967,7 +1007,14 @@
             <td class="px-4 py-3 text-right font-bold ${cumplimiento >= 100 ? 'text-emerald-600' : 'text-slate-700'}">${cumplimiento}%</td>
           </tr>
         `;
-      }).join('');
+      }).join('') + `
+        <tr class="bg-slate-100 border-t-2 border-slate-300 font-bold">
+          <td class="px-4 py-3 text-slate-800">Total</td>
+          <td class="px-4 py-3 text-right text-slate-900">$${Math.round(totalV2026).toLocaleString('es-EC')}</td>
+          <td class="px-4 py-3 text-right text-slate-800">$${Math.round(totalProy2026).toLocaleString('es-EC')}</td>
+          <td class="px-4 py-3 text-right ${totalCumplimiento >= 100 ? 'text-emerald-600' : 'text-slate-800'}">${totalCumplimiento}%</td>
+        </tr>
+      `;
     }
 
     function getMonthlyData(data) {
@@ -1077,7 +1124,13 @@
             <td class="px-3 py-2 text-right font-bold text-[#e11d48]">${pct}%</td>
           </tr>
         `;
-      }).join('');
+      }).join('') + `
+        <tr class="bg-slate-100 border-t-2 border-slate-300 font-bold">
+          <td class="px-3 py-2 text-slate-800">Total</td>
+          <td class="px-3 py-2 text-right text-slate-900">$${Math.round(totalTop10).toLocaleString('es-EC')}</td>
+          <td class="px-3 py-2 text-right text-[#e11d48]">100%</td>
+        </tr>
+      `;
     }
 
     function renderKPIIncentivos(data) {
