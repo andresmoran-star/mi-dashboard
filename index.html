@@ -320,22 +320,30 @@
           <input type="text" id="searchIncentivos" placeholder="🔍 Buscar marca..." 
             class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
         </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Marca</label>
+          <select id="filterMarcaIncentivos" class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
+            <option value="">🏷️ Todas las Marcas</option>
+          </select>
+        </div>
       </div>
 
-      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-base font-bold text-slate-800">📈 Ventas por Marca (Mensual)</h2>
-          <span class="text-xs font-medium text-slate-400">Incentivos Medios · Año 2026</span>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-base font-bold text-slate-800">📈 Ventas Mensuales</h2>
+            <span class="text-xs font-medium text-slate-400">Incentivos Medios · Año 2026</span>
+          </div>
+          <div class="h-[420px]"><canvas id="chartIncentivosPorMarca"></canvas></div>
         </div>
-        <div class="h-96"><canvas id="chartIncentivosPorMarca"></canvas></div>
-      </div>
 
-      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-base font-bold text-slate-800">📊 Ventas por Medio</h2>
-          <span class="text-xs font-medium text-slate-400">Incentivos Medios · Año 2026</span>
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-base font-bold text-slate-800">📊 Ventas por Medio</h2>
+            <span class="text-xs font-medium text-slate-400">Incentivos Medios · Año 2026</span>
+          </div>
+          <div id="ventasPorMedioListIncentivos" class="h-[420px] overflow-y-auto pr-2 space-y-2.5"></div>
         </div>
-        <div id="ventasPorMedioListIncentivos" class="space-y-2.5 max-h-[480px] overflow-y-auto pr-2"></div>
       </div>
 
     </div>
@@ -486,6 +494,22 @@
         option.value = cc; option.textContent = cc;
         selectCCMain.appendChild(option);
       });
+
+      // Marcas disponibles en Incentivos Medios (solo año 2026)
+      const selectMarcaInc = document.getElementById('filterMarcaIncentivos');
+      selectMarcaInc.innerHTML = '<option value="">🏷️ Todas las Marcas</option>';
+      const marcasIncentivos = [...new Set(
+        data.filter(r => {
+          const cc = (getKey(r, "Centro de Costos") || getKey(r, "Centro")).toLowerCase();
+          return cc.includes("incentivo") && getTipoRow(r) === "2026";
+        }).map(r => getKey(r, "Marca") || "Sin Marca")
+      )].sort((a, b) => a.localeCompare(b));
+
+      marcasIncentivos.forEach(marca => {
+        const option = document.createElement('option');
+        option.value = marca; option.textContent = marca;
+        selectMarcaInc.appendChild(option);
+      });
     }
 
     // Filtro para las tarjetas KPI: aplica búsqueda + mes + centro de costos
@@ -569,17 +593,19 @@
     // Incentivos Medios: solo Centro de Costos "Incentivos Medios" y únicamente datos del año 2026
     function getFilteredDataIncentivos() {
       const searchTerm = document.getElementById('searchIncentivos').value.toLowerCase();
+      const selectedMarca = document.getElementById('filterMarcaIncentivos').value;
 
       return globalData.filter(row => {
         const rowCC = getKey(row, "Centro de Costos") || getKey(row, "Centro");
-        const rowMarca = getKey(row, "Marca");
+        const rowMarca = getKey(row, "Marca") || "Sin Marca";
         const tipoNorm = getTipoRow(row);
 
         const matchesIncCC = rowCC.toLowerCase().includes("incentivo");
         const matchesTipo2026 = tipoNorm === "2026";
         const matchesSearch = !searchTerm || rowMarca.toLowerCase().includes(searchTerm);
+        const matchesMarcaFilter = !selectedMarca || rowMarca === selectedMarca;
 
-        return matchesIncCC && matchesTipo2026 && matchesSearch;
+        return matchesIncCC && matchesTipo2026 && matchesSearch && matchesMarcaFilter;
       });
     }
 
@@ -1044,58 +1070,27 @@
       let mesesUnicosSet = new Set(data.map(r => getMesNormalizado(r)).filter(Boolean));
       let meses = MESES_ORDEN.filter(m => mesesUnicosSet.has(m));
 
-      const marcas = [...new Set(data.map(r => getKey(r, "Marca") || "Sin Marca"))];
-
-      const colorPalette = ['#e11d48', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1', '#14b8a6', '#eab308'];
-
-      const datasets = marcas.map((marca, idx) => {
-        const values = meses.map(mes => data
-          .filter(r => getMesNormalizado(r) === mes && (getKey(r, "Marca") || "Sin Marca") === marca)
-          .reduce((s, r) => s + parseMonto(r[montoKey]), 0));
-        const color = colorPalette[idx % colorPalette.length];
-        return {
-          label: marca,
-          data: values.map(v => Math.round(v)),
-          borderColor: color,
-          backgroundColor: color,
-          fill: false,
-          tension: 0.3,
-          pointRadius: 3,
-          borderWidth: 2
-        };
-      });
+      const dataVentas = meses.map(mes => data
+        .filter(r => getMesNormalizado(r) === mes)
+        .reduce((s, r) => s + parseMonto(r[montoKey]), 0));
 
       if (chartIncentivosInstance) chartIncentivosInstance.destroy();
       const ctx = document.getElementById('chartIncentivosPorMarca').getContext('2d');
 
-      if (meses.length === 0 || marcas.length === 0) {
-        chartIncentivosInstance = new Chart(ctx, {
-          type: 'line',
-          data: { labels: [], datasets: [] },
-          options: { responsive: true, maintainAspectRatio: false }
-        });
-        return;
-      }
-
       chartIncentivosInstance = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
           labels: meses.map(m => m.toUpperCase()),
-          datasets: datasets
+          datasets: [
+            { type: 'bar', label: 'Ventas_2026', data: dataVentas.map(v => Math.round(v)), backgroundColor: '#e11d48', borderRadius: 4 }
+          ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { position: 'bottom', labels: { color: '#334155', font: { size: 10, weight: 'bold' }, boxWidth: 10 } },
-            datalabels: { display: false },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return context.dataset.label + ': $' + Math.round(context.parsed.y).toLocaleString('es-EC');
-                }
-              }
-            }
+            legend: { position: 'top', labels: { color: '#334155', font: { weight: 'bold', size: 11 } } },
+            datalabels: { display: false }
           },
           scales: {
             x: { ticks: { color: '#475569', font: { weight: 'bold', size: 10 } }, grid: { display: false } },
@@ -1248,6 +1243,7 @@
     document.getElementById('filterMesTec').addEventListener('change', renderDashboard);
 
     document.getElementById('searchIncentivos').addEventListener('input', renderDashboard);
+    document.getElementById('filterMarcaIncentivos').addEventListener('change', renderDashboard);
   </script>
 </body>
 </html>
