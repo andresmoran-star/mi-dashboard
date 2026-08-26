@@ -19,7 +19,7 @@
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-200 pb-4 gap-4">
       <div>
         <h1 id="headerTitle" class="text-3xl font-extrabold tracking-tight text-[#e11d48]">📊 Dashboard de Resultados y Comparativos</h1>
-        <p id="headerSubtitle" class="text-slate-500 text-sm">Consolidado: Ventas 2025 vs Ventas 2026 vs Proyección 2026 vs Costos</p>
+        <p id="headerSubtitle" class="text-slate-500 text-sm">Resultados Financieros primer semestre del 2026</p>
       </div>
       
       <!-- Botones de Cambio de Pantalla -->
@@ -35,6 +35,9 @@
         </button>
         <button id="btnSectionTec" onclick="switchSection('TEC')" class="px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition">
           💻 Proyectos tecnológicos
+        </button>
+        <button id="btnSectionInc" onclick="switchSection('INCENTIVOS')" class="px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition">
+          🎁 Incentivos Medios
         </button>
       </div>
 
@@ -307,12 +310,32 @@
         </div>
       </div>
 
+    </div>
+
+    <!-- PANTALLA 5: INCENTIVOS MEDIOS -->
+    <div id="sectionIncentivos" class="hidden space-y-6">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Buscador por Marca</label>
+          <input type="text" id="searchIncentivos" placeholder="🔍 Buscar marca..." 
+            class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
+        </div>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-base font-bold text-slate-800">📈 Ventas por Marca (Mensual)</h2>
+          <span class="text-xs font-medium text-slate-400">Incentivos Medios · Año 2026</span>
+        </div>
+        <div class="h-96"><canvas id="chartIncentivosPorMarca"></canvas></div>
+      </div>
+
       <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-base font-bold text-slate-800">📊 Ventas por Medio</h2>
-          <span class="text-xs font-medium text-slate-400">Ventas 2026 · se actualiza según la marca seleccionada</span>
+          <span class="text-xs font-medium text-slate-400">Incentivos Medios · Año 2026</span>
         </div>
-        <div id="ventasPorMedioListTec" class="space-y-2.5 max-h-[480px] overflow-y-auto pr-2"></div>
+        <div id="ventasPorMedioListIncentivos" class="space-y-2.5 max-h-[480px] overflow-y-auto pr-2"></div>
       </div>
 
     </div>
@@ -333,6 +356,7 @@
     let chartMediosInstance = null;
     let chartFeeInstance = null;
     let chartTecInstance = null;
+    let chartIncentivosInstance = null;
     let chartTopMarcasInstance = null;
     let selectedMesChart = "";
     let lastMainChartMeses = [];
@@ -542,16 +566,35 @@
       });
     }
 
+    // Incentivos Medios: solo Centro de Costos "Incentivos Medios" y únicamente datos del año 2026
+    function getFilteredDataIncentivos() {
+      const searchTerm = document.getElementById('searchIncentivos').value.toLowerCase();
+
+      return globalData.filter(row => {
+        const rowCC = getKey(row, "Centro de Costos") || getKey(row, "Centro");
+        const rowMarca = getKey(row, "Marca");
+        const tipoNorm = getTipoRow(row);
+
+        const matchesIncCC = rowCC.toLowerCase().includes("incentivo");
+        const matchesTipo2026 = tipoNorm === "2026";
+        const matchesSearch = !searchTerm || rowMarca.toLowerCase().includes(searchTerm);
+
+        return matchesIncCC && matchesTipo2026 && matchesSearch;
+      });
+    }
+
     function switchSection(sec) {
       currentSection = sec;
       const btnAll = document.getElementById('btnSectionAll');
       const btnMedios = document.getElementById('btnSectionMedios');
       const btnFee = document.getElementById('btnSectionFee');
       const btnTec = document.getElementById('btnSectionTec');
+      const btnInc = document.getElementById('btnSectionInc');
       const secVisao = document.getElementById('sectionVisaoGeral');
       const secMedios = document.getElementById('sectionMedios');
       const secFee = document.getElementById('sectionServicioFee');
       const secTec = document.getElementById('sectionProyectosTec');
+      const secInc = document.getElementById('sectionIncentivos');
 
       const activeClass = "px-4 py-2 rounded-lg bg-[#e11d48] text-white shadow-sm transition";
       const inactiveClass = "px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800 transition";
@@ -560,11 +603,13 @@
       btnMedios.className = sec === 'MEDIOS' ? activeClass : inactiveClass;
       btnFee.className = sec === 'FEE' ? activeClass : inactiveClass;
       btnTec.className = sec === 'TEC' ? activeClass : inactiveClass;
+      btnInc.className = sec === 'INCENTIVOS' ? activeClass : inactiveClass;
 
       secVisao.classList.toggle('hidden', sec !== 'ALL');
       secMedios.classList.toggle('hidden', sec !== 'MEDIOS');
       secFee.classList.toggle('hidden', sec !== 'FEE');
       secTec.classList.toggle('hidden', sec !== 'TEC');
+      secInc.classList.toggle('hidden', sec !== 'INCENTIVOS');
 
       renderDashboard();
     }
@@ -649,7 +694,10 @@
         renderKPIsGeneric(dataTec, 'kpisTec', 'Ventas 2026');
         renderPivoteMarcasTec(dataTec);
         renderChartTec(dataTec);
-        renderVentasPorMedioList(dataTec, 'ventasPorMedioListTec');
+      } else if (currentSection === 'INCENTIVOS') {
+        const dataInc = getFilteredDataIncentivos();
+        renderChartIncentivosPorMarca(dataInc);
+        renderVentasPorMedioList(dataInc, 'ventasPorMedioListIncentivos');
       }
     }
 
@@ -992,6 +1040,71 @@
       }).join('');
     }
 
+    function renderChartIncentivosPorMarca(data) {
+      let mesesUnicosSet = new Set(data.map(r => getMesNormalizado(r)).filter(Boolean));
+      let meses = MESES_ORDEN.filter(m => mesesUnicosSet.has(m));
+
+      const marcas = [...new Set(data.map(r => getKey(r, "Marca") || "Sin Marca"))];
+
+      const colorPalette = ['#e11d48', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1', '#14b8a6', '#eab308'];
+
+      const datasets = marcas.map((marca, idx) => {
+        const values = meses.map(mes => data
+          .filter(r => getMesNormalizado(r) === mes && (getKey(r, "Marca") || "Sin Marca") === marca)
+          .reduce((s, r) => s + parseMonto(r[montoKey]), 0));
+        const color = colorPalette[idx % colorPalette.length];
+        return {
+          label: marca,
+          data: values.map(v => Math.round(v)),
+          borderColor: color,
+          backgroundColor: color,
+          fill: false,
+          tension: 0.3,
+          pointRadius: 3,
+          borderWidth: 2
+        };
+      });
+
+      if (chartIncentivosInstance) chartIncentivosInstance.destroy();
+      const ctx = document.getElementById('chartIncentivosPorMarca').getContext('2d');
+
+      if (meses.length === 0 || marcas.length === 0) {
+        chartIncentivosInstance = new Chart(ctx, {
+          type: 'line',
+          data: { labels: [], datasets: [] },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+        return;
+      }
+
+      chartIncentivosInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: meses.map(m => m.toUpperCase()),
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { color: '#334155', font: { size: 10, weight: 'bold' }, boxWidth: 10 } },
+            datalabels: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return context.dataset.label + ': $' + Math.round(context.parsed.y).toLocaleString('es-EC');
+                }
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: '#475569', font: { weight: 'bold', size: 10 } }, grid: { display: false } },
+            y: { ticks: { color: '#64748b', callback: function(value) { return '$' + value.toLocaleString('es-EC'); } }, grid: { color: '#f1f5f9' } }
+          }
+        }
+      });
+    }
+
     function renderVentasPorMedioList(data, containerId) {
       const medioMap = {};
 
@@ -1133,6 +1246,8 @@
 
     document.getElementById('searchTec').addEventListener('input', renderDashboard);
     document.getElementById('filterMesTec').addEventListener('change', renderDashboard);
+
+    document.getElementById('searchIncentivos').addEventListener('input', renderDashboard);
   </script>
 </body>
 </html>
