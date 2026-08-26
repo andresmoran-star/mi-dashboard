@@ -328,13 +328,16 @@
         </div>
       </div>
 
+      <div id="kpisIncentivos" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
+
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-base font-bold text-slate-800">📈 Ventas Mensuales</h2>
+            <h2 class="text-base font-bold text-slate-800">🏷️ Ventas por Marca</h2>
             <span class="text-xs font-medium text-slate-400">Incentivos Medios · Año 2026</span>
           </div>
-          <div class="h-[420px]"><canvas id="chartIncentivosPorMarca"></canvas></div>
+          <p class="text-xs text-slate-400 font-medium mb-2">* Clic en una marca para ver sus medios</p>
+          <div id="ventasPorMarcaListIncentivos" class="h-[420px] overflow-y-auto pr-2 space-y-2.5"></div>
         </div>
 
         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
@@ -364,7 +367,7 @@
     let chartMediosInstance = null;
     let chartFeeInstance = null;
     let chartTecInstance = null;
-    let chartIncentivosInstance = null;
+
     let chartTopMarcasInstance = null;
     let selectedMesChart = "";
     let lastMainChartMeses = [];
@@ -591,9 +594,9 @@
     }
 
     // Incentivos Medios: solo Centro de Costos "Incentivos Medios" y únicamente datos del año 2026
-    function getFilteredDataIncentivos() {
+    // Filtro base: NO incluye la marca seleccionada (usado por la lista "Ventas por Marca", que actúa como selector)
+    function getFilteredDataIncentivosBase() {
       const searchTerm = document.getElementById('searchIncentivos').value.toLowerCase();
-      const selectedMarca = document.getElementById('filterMarcaIncentivos').value;
 
       return globalData.filter(row => {
         const rowCC = getKey(row, "Centro de Costos") || getKey(row, "Centro");
@@ -603,9 +606,18 @@
         const matchesIncCC = rowCC.toLowerCase().includes("incentivo");
         const matchesTipo2026 = tipoNorm === "2026";
         const matchesSearch = !searchTerm || rowMarca.toLowerCase().includes(searchTerm);
-        const matchesMarcaFilter = !selectedMarca || rowMarca === selectedMarca;
 
-        return matchesIncCC && matchesTipo2026 && matchesSearch && matchesMarcaFilter;
+        return matchesIncCC && matchesTipo2026 && matchesSearch;
+      });
+    }
+
+    // Filtro completo: incluye la marca seleccionada (usado por KPI y "Ventas por Medio")
+    function getFilteredDataIncentivos() {
+      const selectedMarca = document.getElementById('filterMarcaIncentivos').value;
+
+      return getFilteredDataIncentivosBase().filter(row => {
+        const rowMarca = getKey(row, "Marca") || "Sin Marca";
+        return !selectedMarca || rowMarca === selectedMarca;
       });
     }
 
@@ -721,9 +733,11 @@
         renderPivoteMarcasTec(dataTec);
         renderChartTec(dataTec);
       } else if (currentSection === 'INCENTIVOS') {
-        const dataInc = getFilteredDataIncentivos();
-        renderChartIncentivosPorMarca(dataInc);
-        renderVentasPorMedioList(dataInc, 'ventasPorMedioListIncentivos');
+        const dataIncAll = getFilteredDataIncentivosBase();
+        const dataIncFiltered = getFilteredDataIncentivos();
+        renderKPIIncentivos(dataIncFiltered);
+        renderVentasPorMarcaList(dataIncAll, 'ventasPorMarcaListIncentivos');
+        renderVentasPorMedioList(dataIncFiltered, 'ventasPorMedioListIncentivos');
       }
     }
 
@@ -1066,38 +1080,64 @@
       }).join('');
     }
 
-    function renderChartIncentivosPorMarca(data) {
-      let mesesUnicosSet = new Set(data.map(r => getMesNormalizado(r)).filter(Boolean));
-      let meses = MESES_ORDEN.filter(m => mesesUnicosSet.has(m));
+    function renderKPIIncentivos(data) {
+      const total = data.reduce((sum, row) => sum + parseMonto(row[montoKey]), 0);
+      const container = document.getElementById('kpisIncentivos');
+      if (!container) return;
 
-      const dataVentas = meses.map(mes => data
-        .filter(r => getMesNormalizado(r) === mes)
-        .reduce((s, r) => s + parseMonto(r[montoKey]), 0));
+      container.innerHTML = `
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Ventas 2026</p>
+          <p class="text-3xl font-extrabold text-emerald-600 mt-2">$${Math.round(total).toLocaleString('es-EC')}</p>
+        </div>
+      `;
+    }
 
-      if (chartIncentivosInstance) chartIncentivosInstance.destroy();
-      const ctx = document.getElementById('chartIncentivosPorMarca').getContext('2d');
+    function filterIncentivosByMarca(marca) {
+      const select = document.getElementById('filterMarcaIncentivos');
+      select.value = (select.value === marca) ? "" : marca;
+      renderDashboard();
+    }
 
-      chartIncentivosInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: meses.map(m => m.toUpperCase()),
-          datasets: [
-            { type: 'bar', label: 'Ventas_2026', data: dataVentas.map(v => Math.round(v)), backgroundColor: '#e11d48', borderRadius: 4 }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'top', labels: { color: '#334155', font: { weight: 'bold', size: 11 } } },
-            datalabels: { display: false }
-          },
-          scales: {
-            x: { ticks: { color: '#475569', font: { weight: 'bold', size: 10 } }, grid: { display: false } },
-            y: { ticks: { color: '#64748b', callback: function(value) { return '$' + value.toLocaleString('es-EC'); } }, grid: { color: '#f1f5f9' } }
-          }
-        }
+    function renderVentasPorMarcaList(data, containerId) {
+      const marcaMap = {};
+
+      data.forEach(row => {
+        const marca = getKey(row, "Marca") || "Sin Marca";
+        const monto = parseMonto(row[montoKey]);
+        marcaMap[marca] = (marcaMap[marca] || 0) + monto;
       });
+
+      const entries = Object.entries(marcaMap).sort((a, b) => b[1] - a[1]);
+      const total = entries.reduce((s, e) => s + e[1], 0);
+      const maxValor = entries.length > 0 ? entries[0][1] : 0;
+      const selectedMarca = document.getElementById('filterMarcaIncentivos').value;
+
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      if (entries.length === 0) {
+        container.innerHTML = `<p class="text-sm text-slate-400 text-center py-6">Sin datos para estos filtros.</p>`;
+        return;
+      }
+
+      container.innerHTML = entries.map(([marca, monto]) => {
+        const pctTotal = total > 0 ? (monto / total * 100) : 0;
+        const pctBarra = maxValor > 0 ? (monto / maxValor * 100) : 0;
+        const isSelected = selectedMarca && selectedMarca === marca;
+        const marcaAttr = marca.replace(/'/g, "\\'");
+
+        return `
+          <div onclick="filterIncentivosByMarca('${marcaAttr}')" class="flex items-center gap-3 cursor-pointer rounded-lg px-1.5 py-1 transition ${isSelected ? 'bg-rose-50' : 'hover:bg-slate-50'}">
+            <div class="w-28 sm:w-32 shrink-0 text-sm font-medium ${isSelected ? 'text-[#e11d48] font-bold' : 'text-slate-700'} truncate" title="${marca}">${marca}</div>
+            <div class="flex-1 bg-slate-100 rounded-full h-3 overflow-hidden">
+              <div class="h-3 bg-[#e11d48] rounded-full" style="width:${pctBarra.toFixed(1)}%"></div>
+            </div>
+            <div class="w-24 sm:w-28 shrink-0 text-right text-sm font-semibold text-slate-800">$${Math.round(monto).toLocaleString('es-EC')}</div>
+            <div class="w-12 shrink-0 text-right text-xs font-bold text-[#e11d48]">${pctTotal.toFixed(1)}%</div>
+          </div>
+        `;
+      }).join('');
     }
 
     function renderVentasPorMedioList(data, containerId) {
