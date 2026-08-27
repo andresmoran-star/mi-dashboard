@@ -48,17 +48,11 @@
 
     <!-- PANTALLA 1: VISIÓN GENERAL (Fondo Oscuro Principal) -->
     <div id="sectionVisaoGeral" class="space-y-6">
-      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Buscador General</label>
           <input type="text" id="searchMain" placeholder="🔍 Buscar cliente, medio, grupo..." 
             class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Centro de Costos</label>
-          <select id="filterCCMain" class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
-            <option value="">🏢 Todos los Centros de Costos</option>
-          </select>
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Mes</label>
@@ -351,21 +345,31 @@
       <div id="kpisIncentivos" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+          <div class="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+            <h2 class="text-base font-bold text-slate-800">🏷️ Incentivos por Marca</h2>
+            <span class="text-xs font-medium text-slate-400">* Clic para filtrar</span>
+          </div>
+          <div class="overflow-x-auto overflow-y-auto h-[420px]">
+            <table class="w-full text-left text-sm">
+              <thead class="sticky top-0 bg-[#e11d48] text-white uppercase text-xs font-bold tracking-wider">
+                <tr>
+                  <th class="px-4 py-3 border-r border-rose-500">Marca</th>
+                  <th class="px-4 py-3 text-right border-r border-rose-500">Monto</th>
+                  <th class="px-4 py-3 text-right">% Total</th>
+                </tr>
+              </thead>
+              <tbody id="incentivos-por-marca-body" class="divide-y divide-slate-100 text-slate-700"></tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-base font-bold text-slate-800">📊 Incentivos por Medio</h2>
             <span class="text-xs font-medium text-slate-400">Incentivos Medios · Año 2026</span>
           </div>
           <div id="incentivosPorMedioList" class="h-[420px] overflow-y-auto pr-2 space-y-2.5"></div>
-        </div>
-
-        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-base font-bold text-slate-800">🏷️ Incentivos por Marca</h2>
-            <span class="text-xs font-medium text-slate-400">Incentivos Medios · Año 2026</span>
-          </div>
-          <p class="text-xs text-slate-400 font-medium mb-2">* Clic en una marca para ver sus medios</p>
-          <div id="ventasPorMarcaListIncentivos" class="h-[420px] overflow-y-auto pr-2 space-y-2.5"></div>
         </div>
       </div>
 
@@ -481,21 +485,16 @@
       return val;
     }
 
-    // Únicos centros de costos habilitados en el filtro de Visión General
-    const CC_MAIN_OPTIONS = ["Ejecución de Medios", "Servicios fee", "Proyectos tecnológicos"];
-
     function populateFilters(data) {
       const selectMesMain = document.getElementById('filterMesMain');
       const selectMesMedios = document.getElementById('filterMesMedios');
       const selectMesFee = document.getElementById('filterMesServicioFee');
       const selectMesTec = document.getElementById('filterMesTec');
-      const selectCCMain = document.getElementById('filterCCMain');
 
       selectMesMain.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
       selectMesMedios.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
       selectMesFee.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
       selectMesTec.innerHTML = '<option value="">🗓️ Todos los Meses</option>';
-      selectCCMain.innerHTML = '<option value="">🏢 Todos los Centros de Costos</option>';
 
       let mesesUnicos = [...new Set(data.map(r => getMesNormalizado(r)).filter(Boolean))];
       mesesUnicos.sort((a, b) => {
@@ -510,12 +509,6 @@
         const opt2 = document.createElement('option'); opt2.value = mes; opt2.textContent = mes; selectMesMedios.appendChild(opt2);
         const opt3 = document.createElement('option'); opt3.value = mes; opt3.textContent = mes; selectMesFee.appendChild(opt3);
         const opt4 = document.createElement('option'); opt4.value = mes; opt4.textContent = mes; selectMesTec.appendChild(opt4);
-      });
-
-      CC_MAIN_OPTIONS.forEach(cc => {
-        const option = document.createElement('option');
-        option.value = cc; option.textContent = cc;
-        selectCCMain.appendChild(option);
       });
 
       // Grupos disponibles (usados en Medios, Fee y Tec)
@@ -554,14 +547,12 @@
     function getFilteredDataMain() {
       const searchTerm = document.getElementById('searchMain').value.toLowerCase();
       const selectedMes = document.getElementById('filterMesMain').value;
-      const selectedCC = document.getElementById('filterCCMain').value;
 
       return globalData.filter(row => {
         const matchesSearch = Object.values(row).some(val => String(val).toLowerCase().includes(searchTerm));
         const rowMes = getMesNormalizado(row);
-        const rowCC = getKey(row, "Centro de Costos") || getKey(row, "Centro");
 
-        return matchesSearch && (!selectedMes || rowMes === selectedMes) && (!selectedCC || rowCC === selectedCC);
+        return matchesSearch && (!selectedMes || rowMes === selectedMes);
       });
     }
 
@@ -791,12 +782,12 @@
         const dataIncAll = getFilteredDataIncentivosBase();
         const dataIncFiltered = getFilteredDataIncentivos();
         renderKPIIncentivos(dataIncFiltered);
-        renderVentasPorMarcaList(dataIncAll, 'ventasPorMarcaListIncentivos');
+        renderIncentivosPorMarcaTable(dataIncAll, 'incentivos-por-marca-body');
         renderVentasPorMedioList(dataIncFiltered, 'incentivosPorMedioList');
       }
     }
 
-    function renderKPIsGeneric(data, containerId, ventasLabel, showCCBreakdown) {
+    function renderKPIsGeneric(data, containerId, ventasLabel, showCCBreakdown, crecimientoLabel) {
       const rows2026 = data.filter(r => getTipoRow(r) === "2026");
       const rows2025 = data.filter(r => getTipoRow(r) === "2025");
       const rowsProy = data.filter(r => getTipoRow(r) === "proyeccion");
@@ -833,7 +824,8 @@
           { label: "Ejecución de Medios", match: cc => cc.includes("ejecuci") && cc.includes("medio") },
           { label: "Servicio fee", match: cc => cc.includes("fee") },
           { label: "Proyectos tecnológicos", match: cc => cc.includes("tecnol") },
-          { label: "Producción audiovisual", match: cc => cc.includes("audiovisual") }
+          { label: "Producción audiovisual", match: cc => cc.includes("audiovisual") },
+          { label: "Incentivos Medios", match: cc => cc.includes("incentivo"), forceZeroPercent: true }
         ];
 
         const filas = ccGrupos.map(grupo => {
@@ -841,8 +833,8 @@
           const proy2026Grupo = rowsProy.filter(r => grupo.match(getCC(r))).reduce((s, r) => s + parseMonto(r[montoKey]), 0);
           const ventas2025Grupo = rows2025Comparable.filter(r => grupo.match(getCC(r))).reduce((s, r) => s + parseMonto(r[montoKey]), 0);
 
-          const cumplimientoGrupo = proy2026Grupo > 0 ? (ventas2026Grupo / proy2026Grupo * 100) : 0;
-          const crecimientoGrupo = ventas2025Grupo > 0 ? ((ventas2026Grupo - ventas2025Grupo) / ventas2025Grupo * 100) : (ventas2026Grupo > 0 ? 100 : 0);
+          const cumplimientoGrupo = grupo.forceZeroPercent ? 0 : (proy2026Grupo > 0 ? (ventas2026Grupo / proy2026Grupo * 100) : 0);
+          const crecimientoGrupo = grupo.forceZeroPercent ? 0 : (ventas2025Grupo > 0 ? ((ventas2026Grupo - ventas2025Grupo) / ventas2025Grupo * 100) : (ventas2026Grupo > 0 ? 100 : 0));
 
           return {
             label: grupo.label,
@@ -880,7 +872,7 @@
             ${filas.map(f => `
               <div class="flex justify-between items-center text-xs">
                 <span class="text-slate-500">${f.label}</span>
-                <span class="font-semibold ${f.esPositivoGrupo ? 'text-emerald-600' : 'text-red-600'}">${f.esPositivoGrupo ? '+' : ''}${f.crecimiento.toFixed(1)}%</span>
+                <span class="font-semibold ${f.esPositivoGrupo ? 'text-emerald-600' : 'text-red-600'}">${f.crecimiento > 0 ? '+' : ''}${f.crecimiento.toFixed(1)}%</span>
               </div>
             `).join('')}
           </div>
@@ -902,7 +894,7 @@
           ${cumplimientoBreakdownHtml}
         </div>
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Crecimiento Ventas 2026 vs 2025</p>
+          <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">${crecimientoLabel || 'Crecimiento Ventas 2026 vs 2025'}</p>
           <p class="text-3xl font-extrabold ${esPositivo ? 'text-emerald-600' : 'text-red-600'} mt-2">${esPositivo ? '+' : ''}${crecimiento.toFixed(1)}%</p>
           ${mesLimite ? `<p class="text-[11px] text-slate-400 mt-1">Comparado hasta ${mesLimite} en ambos años</p>` : ''}
           ${crecimientoBreakdownHtml}
@@ -911,7 +903,7 @@
     }
 
     function renderKPIs(data) {
-      renderKPIsGeneric(data, 'kpis', 'Ventas 2026 (Monto Total)', true);
+      renderKPIsGeneric(data, 'kpis', 'Ventas 2026 (Monto Total)', true, 'Crecimiento Ventas 2026 vs 2025 YTD');
     }
 
     function renderPivoteMarcas(mediosData) {
@@ -1274,7 +1266,7 @@
       renderDashboard();
     }
 
-    function renderVentasPorMarcaList(data, containerId) {
+    function renderIncentivosPorMarcaTable(data, tbodyId) {
       const marcaMap = {};
 
       data.forEach(row => {
@@ -1285,34 +1277,36 @@
 
       const entries = Object.entries(marcaMap).sort((a, b) => b[1] - a[1]);
       const total = entries.reduce((s, e) => s + e[1], 0);
-      const maxValor = entries.length > 0 ? entries[0][1] : 0;
       const selectedMarca = document.getElementById('filterMarcaIncentivos').value;
 
-      const container = document.getElementById(containerId);
-      if (!container) return;
+      const tbody = document.getElementById(tbodyId);
+      if (!tbody) return;
 
       if (entries.length === 0) {
-        container.innerHTML = `<p class="text-sm text-slate-400 text-center py-6">Sin datos para estos filtros.</p>`;
+        tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-6 text-center text-sm text-slate-400">Sin datos para estos filtros.</td></tr>`;
         return;
       }
 
-      container.innerHTML = entries.map(([marca, monto]) => {
+      tbody.innerHTML = entries.map(([marca, monto], idx) => {
         const pctTotal = total > 0 ? (monto / total * 100) : 0;
-        const pctBarra = maxValor > 0 ? (monto / maxValor * 100) : 0;
         const isSelected = selectedMarca && selectedMarca === marca;
         const marcaAttr = marca.replace(/'/g, "\\'");
+        const bgRow = isSelected ? "bg-rose-50" : (idx % 2 === 0 ? "bg-white" : "bg-slate-50/60");
 
         return `
-          <div onclick="filterIncentivosByMarca('${marcaAttr}')" class="flex items-center gap-3 cursor-pointer rounded-lg px-1.5 py-1 transition ${isSelected ? 'bg-rose-50' : 'hover:bg-slate-50'}">
-            <div class="w-28 sm:w-32 shrink-0 text-sm font-medium ${isSelected ? 'text-[#e11d48] font-bold' : 'text-slate-700'} truncate" title="${marca}">${marca}</div>
-            <div class="flex-1 bg-slate-100 rounded-full h-3 overflow-hidden">
-              <div class="h-3 bg-[#e11d48] rounded-full" style="width:${pctBarra.toFixed(1)}%"></div>
-            </div>
-            <div class="w-24 sm:w-28 shrink-0 text-right text-sm font-semibold text-slate-800">$${Math.round(monto).toLocaleString('es-EC')}</div>
-            <div class="w-12 shrink-0 text-right text-xs font-bold text-[#e11d48]">${pctTotal.toFixed(1)}%</div>
-          </div>
+          <tr onclick="filterIncentivosByMarca('${marcaAttr}')" class="${bgRow} hover:bg-rose-50/80 cursor-pointer transition">
+            <td class="px-4 py-2.5 font-medium ${isSelected ? 'text-[#e11d48] font-bold' : 'text-slate-800'}">${marca}</td>
+            <td class="px-4 py-2.5 text-right font-semibold text-slate-900">$${Math.round(monto).toLocaleString('es-EC')}</td>
+            <td class="px-4 py-2.5 text-right font-bold text-[#e11d48]">${pctTotal.toFixed(1)}%</td>
+          </tr>
         `;
-      }).join('');
+      }).join('') + `
+        <tr class="bg-slate-100 border-t-2 border-slate-300 font-bold">
+          <td class="px-4 py-2.5 text-slate-800">Total</td>
+          <td class="px-4 py-2.5 text-right text-slate-900">$${Math.round(total).toLocaleString('es-EC')}</td>
+          <td class="px-4 py-2.5 text-right text-[#e11d48]">100%</td>
+        </tr>
+      `;
     }
 
     function renderVentasPorMedioList(data, containerId) {
@@ -1446,7 +1440,6 @@
     // Escuchadores de eventos
     document.getElementById('searchMain').addEventListener('input', renderDashboard);
     document.getElementById('filterMesMain').addEventListener('change', renderDashboard);
-    document.getElementById('filterCCMain').addEventListener('change', renderDashboard);
 
     document.getElementById('searchMedios').addEventListener('input', renderDashboard);
     document.getElementById('filterMesMedios').addEventListener('change', renderDashboard);
