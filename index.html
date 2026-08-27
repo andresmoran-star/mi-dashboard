@@ -796,7 +796,7 @@
       }
     }
 
-    function renderKPIsGeneric(data, containerId, ventasLabel) {
+    function renderKPIsGeneric(data, containerId, ventasLabel, showCCBreakdown) {
       const rows2026 = data.filter(r => getTipoRow(r) === "2026");
       const rows2025 = data.filter(r => getTipoRow(r) === "2025");
       const rowsProy = data.filter(r => getTipoRow(r) === "proyeccion");
@@ -823,6 +823,70 @@
       const esPositivo = crecimiento >= 0;
       const mesLimite = maxIdx >= 0 ? MESES_ORDEN[maxIdx] : "";
 
+      let ventasBreakdownHtml = "";
+      let cumplimientoBreakdownHtml = "";
+      let crecimientoBreakdownHtml = "";
+
+      if (showCCBreakdown) {
+        const getCC = r => (getKey(r, "Centro de Costos") || getKey(r, "Centro")).toLowerCase();
+        const ccGrupos = [
+          { label: "Ejecución de Medios", match: cc => cc.includes("ejecuci") && cc.includes("medio") },
+          { label: "Servicio fee", match: cc => cc.includes("fee") },
+          { label: "Proyectos tecnológicos", match: cc => cc.includes("tecnol") },
+          { label: "Producción audiovisual", match: cc => cc.includes("audiovisual") }
+        ];
+
+        const filas = ccGrupos.map(grupo => {
+          const ventas2026Grupo = rows2026.filter(r => grupo.match(getCC(r))).reduce((s, r) => s + parseMonto(r[montoKey]), 0);
+          const proy2026Grupo = rowsProy.filter(r => grupo.match(getCC(r))).reduce((s, r) => s + parseMonto(r[montoKey]), 0);
+          const ventas2025Grupo = rows2025Comparable.filter(r => grupo.match(getCC(r))).reduce((s, r) => s + parseMonto(r[montoKey]), 0);
+
+          const cumplimientoGrupo = proy2026Grupo > 0 ? (ventas2026Grupo / proy2026Grupo * 100) : 0;
+          const crecimientoGrupo = ventas2025Grupo > 0 ? ((ventas2026Grupo - ventas2025Grupo) / ventas2025Grupo * 100) : (ventas2026Grupo > 0 ? 100 : 0);
+
+          return {
+            label: grupo.label,
+            monto: ventas2026Grupo,
+            cumplimiento: cumplimientoGrupo,
+            crecimiento: crecimientoGrupo,
+            esPositivoGrupo: crecimientoGrupo >= 0
+          };
+        });
+
+        ventasBreakdownHtml = `
+          <div class="mt-3 pt-3 border-t border-slate-100 space-y-1">
+            ${filas.map(f => `
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-slate-500">${f.label}</span>
+                <span class="font-semibold text-slate-700">$${Math.round(f.monto).toLocaleString('es-EC')}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+
+        cumplimientoBreakdownHtml = `
+          <div class="mt-3 pt-3 border-t border-slate-100 space-y-1">
+            ${filas.map(f => `
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-slate-500">${f.label}</span>
+                <span class="font-semibold text-slate-700">${f.cumplimiento.toFixed(1)}%</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+
+        crecimientoBreakdownHtml = `
+          <div class="mt-3 pt-3 border-t border-slate-100 space-y-1">
+            ${filas.map(f => `
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-slate-500">${f.label}</span>
+                <span class="font-semibold ${f.esPositivoGrupo ? 'text-emerald-600' : 'text-red-600'}">${f.esPositivoGrupo ? '+' : ''}${f.crecimiento.toFixed(1)}%</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
       const container = document.getElementById(containerId);
       if (!container) return;
 
@@ -830,21 +894,24 @@
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
           <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">${ventasLabel || 'Ventas 2026'}</p>
           <p class="text-3xl font-extrabold text-emerald-600 mt-2">$${Math.round(totalVentas2026).toLocaleString('es-EC')}</p>
+          ${ventasBreakdownHtml}
         </div>
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
           <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Cumplimiento vs Proyección 2026</p>
           <p class="text-3xl font-extrabold text-[#e11d48] mt-2">${cumplimiento.toFixed(1)}%</p>
+          ${cumplimientoBreakdownHtml}
         </div>
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
           <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Crecimiento Ventas 2026 vs 2025</p>
           <p class="text-3xl font-extrabold ${esPositivo ? 'text-emerald-600' : 'text-red-600'} mt-2">${esPositivo ? '+' : ''}${crecimiento.toFixed(1)}%</p>
           ${mesLimite ? `<p class="text-[11px] text-slate-400 mt-1">Comparado hasta ${mesLimite} en ambos años</p>` : ''}
+          ${crecimientoBreakdownHtml}
         </div>
       `;
     }
 
     function renderKPIs(data) {
-      renderKPIsGeneric(data, 'kpis', 'Ventas 2026 (Monto Total)');
+      renderKPIsGeneric(data, 'kpis', 'Ventas 2026 (Monto Total)', true);
     }
 
     function renderPivoteMarcas(mediosData) {
