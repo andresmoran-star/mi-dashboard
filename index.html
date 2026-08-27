@@ -107,7 +107,7 @@
 
     <!-- PANTALLA 2: EJECUCIÓN DE MEDIOS -->
     <div id="sectionMedios" class="hidden space-y-6">
-      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div>
           <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Buscador por Marca</label>
           <input type="text" id="searchMedios" placeholder="🔍 Buscar marca..." 
@@ -117,6 +117,12 @@
           <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mes General Medios</label>
           <select id="filterMesMedios" class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
             <option value="">🗓️ Todos los Meses</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Grupo</label>
+          <select id="filterGrupoMedios" class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
+            <option value="">🏬 Todos los Grupos</option>
           </select>
         </div>
         <div class="flex items-end">
@@ -139,11 +145,11 @@
           <div class="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
             <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
               <span class="w-3 h-3 rounded-full bg-[#e11d48]"></span>
-              Pivote de Marcas (% Cumplimiento)
+              Comparación de ventas por marca año anterior y cumplimiento presupuesto
             </h2>
             <span class="text-xs text-slate-400 font-medium">* Clic para filtrar</span>
           </div>
-          <div class="overflow-x-auto overflow-y-auto flex-1">
+          <div class="overflow-x-auto overflow-y-scroll flex-1 max-h-[864px]">
             <table class="w-full text-left text-sm">
               <thead class="sticky top-0 bg-[#e11d48] text-white uppercase text-xs font-bold tracking-wider">
                 <tr>
@@ -160,11 +166,11 @@
           </div>
         </div>
 
-        <!-- DERECHA: Ventas por C. Costos y Ventas por Medio apiladas, misma altura -->
+        <!-- DERECHA: Gráfica de ventas por marca año anterior/cumplimiento y Ventas por Medio apiladas, misma altura -->
         <div class="flex flex-col gap-6">
           <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
             <div class="flex justify-between items-center mb-4">
-              <h2 class="text-base font-bold text-slate-800">Ventas por C. Costos</h2>
+              <h2 class="text-base font-bold text-slate-800">Grafica de ventas por marca año anterior y cumplimiento presupuesto</h2>
               <span class="text-xs font-medium text-slate-400">Barras: 2026/2025 | Línea: Proyección</span>
             </div>
             <div class="h-[420px]"><canvas id="chartComparativoMedios"></canvas></div>
@@ -184,7 +190,7 @@
 
     <!-- PANTALLA 3: SERVICIO FEE -->
     <div id="sectionServicioFee" class="hidden space-y-6">
-      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div>
           <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Buscador por Marca</label>
           <input type="text" id="searchServicioFee" placeholder="🔍 Buscar marca..." 
@@ -194,6 +200,12 @@
           <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mes General Servicio fee</label>
           <select id="filterMesServicioFee" class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
             <option value="">🗓️ Todos los Meses</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Grupo</label>
+          <select id="filterGrupoFee" class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
+            <option value="">🏬 Todos los Grupos</option>
           </select>
         </div>
         <div class="flex items-end">
@@ -251,7 +263,7 @@
 
     <!-- PANTALLA 4: PROYECTOS TECNOLÓGICOS -->
     <div id="sectionProyectosTec" class="hidden space-y-6">
-      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div>
           <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Buscador por Marca</label>
           <input type="text" id="searchTec" placeholder="🔍 Buscar marca..." 
@@ -261,6 +273,12 @@
           <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mes General Proyectos tecnológicos</label>
           <select id="filterMesTec" class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
             <option value="">🗓️ Todos los Meses</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Grupo</label>
+          <select id="filterGrupoTec" class="w-full bg-slate-50 border border-slate-200 text-slate-800 p-2.5 rounded-xl focus:outline-none focus:border-[#e11d48] transition text-sm">
+            <option value="">🏬 Todos los Grupos</option>
           </select>
         </div>
         <div class="flex items-end">
@@ -332,22 +350,22 @@
 
       <div id="kpisIncentivos" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
 
-      <div class="space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-base font-bold text-slate-800">🏷️ Ventas por Marca</h2>
+            <h2 class="text-base font-bold text-slate-800">📊 Incentivos por Medio</h2>
             <span class="text-xs font-medium text-slate-400">Incentivos Medios · Año 2026</span>
           </div>
-          <p class="text-xs text-slate-400 font-medium mb-2">* Clic en una marca para ver sus medios</p>
-          <div id="ventasPorMarcaListIncentivos" class="h-[420px] overflow-y-auto pr-2 space-y-2.5"></div>
+          <div id="incentivosPorMedioList" class="h-[420px] overflow-y-auto pr-2 space-y-2.5"></div>
         </div>
 
         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-base font-bold text-slate-800">📊 Ventas por Medio</h2>
+            <h2 class="text-base font-bold text-slate-800">🏷️ Incentivos por Marca</h2>
             <span class="text-xs font-medium text-slate-400">Incentivos Medios · Año 2026</span>
           </div>
-          <div id="ventasPorMedioListIncentivos" class="h-[210px] overflow-y-auto pr-2 space-y-2.5"></div>
+          <p class="text-xs text-slate-400 font-medium mb-2">* Clic en una marca para ver sus medios</p>
+          <div id="ventasPorMarcaListIncentivos" class="h-[420px] overflow-y-auto pr-2 space-y-2.5"></div>
         </div>
       </div>
 
@@ -500,6 +518,21 @@
         selectCCMain.appendChild(option);
       });
 
+      // Grupos disponibles (usados en Medios, Fee y Tec)
+      const selectGrupoMedios = document.getElementById('filterGrupoMedios');
+      const selectGrupoFee = document.getElementById('filterGrupoFee');
+      const selectGrupoTec = document.getElementById('filterGrupoTec');
+      selectGrupoMedios.innerHTML = '<option value="">🏬 Todos los Grupos</option>';
+      selectGrupoFee.innerHTML = '<option value="">🏬 Todos los Grupos</option>';
+      selectGrupoTec.innerHTML = '<option value="">🏬 Todos los Grupos</option>';
+
+      const gruposUnicos = [...new Set(data.map(r => getKey(r, "Grupo")).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+      gruposUnicos.forEach(grupo => {
+        const optM = document.createElement('option'); optM.value = grupo; optM.textContent = grupo; selectGrupoMedios.appendChild(optM);
+        const optF = document.createElement('option'); optF.value = grupo; optF.textContent = grupo; selectGrupoFee.appendChild(optF);
+        const optT = document.createElement('option'); optT.value = grupo; optT.textContent = grupo; selectGrupoTec.appendChild(optT);
+      });
+
       // Marcas disponibles en Incentivos Medios (solo año 2026)
       const selectMarcaInc = document.getElementById('filterMarcaIncentivos');
       selectMarcaInc.innerHTML = '<option value="">🏷️ Todas las Marcas</option>';
@@ -544,54 +577,63 @@
     function getFilteredDataMedios() {
       const searchTerm = document.getElementById('searchMedios').value.toLowerCase();
       const selectedMes = document.getElementById('filterMesMedios').value;
+      const selectedGrupo = document.getElementById('filterGrupoMedios').value;
 
       return globalData.filter(row => {
         const rowCC = getKey(row, "Centro de Costos") || getKey(row, "Centro");
         const rowMarca = getKey(row, "Marca");
         const rowMes = getMesNormalizado(row);
+        const rowGrupo = getKey(row, "Grupo");
 
-        const matchesMediosCC = rowCC.toLowerCase().includes("ejecuci") || rowCC.toLowerCase().includes("medios");
+        const matchesMediosCC = rowCC.toLowerCase().includes("ejecuci") && rowCC.toLowerCase().includes("medio");
         const matchesSearch = !searchTerm || rowMarca.toLowerCase().includes(searchTerm);
         const matchesMes = !selectedMes || rowMes === selectedMes;
         const matchesMarca = !selectedMarca || rowMarca.toLowerCase() === selectedMarca.toLowerCase();
+        const matchesGrupo = !selectedGrupo || rowGrupo === selectedGrupo;
 
-        return matchesMediosCC && matchesSearch && matchesMes && matchesMarca;
+        return matchesMediosCC && matchesSearch && matchesMes && matchesMarca && matchesGrupo;
       });
     }
 
     function getFilteredDataServicioFee() {
       const searchTerm = document.getElementById('searchServicioFee').value.toLowerCase();
       const selectedMes = document.getElementById('filterMesServicioFee').value;
+      const selectedGrupo = document.getElementById('filterGrupoFee').value;
 
       return globalData.filter(row => {
         const rowCC = getKey(row, "Centro de Costos") || getKey(row, "Centro");
         const rowMarca = getKey(row, "Marca");
         const rowMes = getMesNormalizado(row);
+        const rowGrupo = getKey(row, "Grupo");
 
         const matchesFeeCC = rowCC.toLowerCase().includes("fee");
         const matchesSearch = !searchTerm || rowMarca.toLowerCase().includes(searchTerm);
         const matchesMes = !selectedMes || rowMes === selectedMes;
         const matchesMarca = !selectedMarcaFee || rowMarca.toLowerCase() === selectedMarcaFee.toLowerCase();
+        const matchesGrupo = !selectedGrupo || rowGrupo === selectedGrupo;
 
-        return matchesFeeCC && matchesSearch && matchesMes && matchesMarca;
+        return matchesFeeCC && matchesSearch && matchesMes && matchesMarca && matchesGrupo;
       });
     }
 
     function getFilteredDataTec() {
       const searchTerm = document.getElementById('searchTec').value.toLowerCase();
       const selectedMes = document.getElementById('filterMesTec').value;
+      const selectedGrupo = document.getElementById('filterGrupoTec').value;
 
       return globalData.filter(row => {
         const rowCC = getKey(row, "Centro de Costos") || getKey(row, "Centro");
         const rowMarca = getKey(row, "Marca");
         const rowMes = getMesNormalizado(row);
+        const rowGrupo = getKey(row, "Grupo");
 
         const matchesTecCC = rowCC.toLowerCase().includes("tecnol");
         const matchesSearch = !searchTerm || rowMarca.toLowerCase().includes(searchTerm);
         const matchesMes = !selectedMes || rowMes === selectedMes;
         const matchesMarca = !selectedMarcaTec || rowMarca.toLowerCase() === selectedMarcaTec.toLowerCase();
+        const matchesGrupo = !selectedGrupo || rowGrupo === selectedGrupo;
 
-        return matchesTecCC && matchesSearch && matchesMes && matchesMarca;
+        return matchesTecCC && matchesSearch && matchesMes && matchesMarca && matchesGrupo;
       });
     }
 
@@ -670,6 +712,7 @@
     function resetMediosFilters() {
       document.getElementById('searchMedios').value = "";
       document.getElementById('filterMesMedios').value = "";
+      document.getElementById('filterGrupoMedios').value = "";
       resetMarcaFilter();
     }
 
@@ -689,6 +732,7 @@
     function resetServicioFeeFilters() {
       document.getElementById('searchServicioFee').value = "";
       document.getElementById('filterMesServicioFee').value = "";
+      document.getElementById('filterGrupoFee').value = "";
       resetMarcaFeeFilter();
     }
 
@@ -708,6 +752,7 @@
     function resetTecFilters() {
       document.getElementById('searchTec').value = "";
       document.getElementById('filterMesTec').value = "";
+      document.getElementById('filterGrupoTec').value = "";
       resetMarcaTecFilter();
     }
 
@@ -739,7 +784,7 @@
         const dataIncFiltered = getFilteredDataIncentivos();
         renderKPIIncentivos(dataIncFiltered);
         renderVentasPorMarcaList(dataIncAll, 'ventasPorMarcaListIncentivos');
-        renderVentasPorMedioList(dataIncFiltered, 'ventasPorMedioListIncentivos');
+        renderVentasPorMedioList(dataIncFiltered, 'incentivosPorMedioList');
       }
     }
 
@@ -1142,7 +1187,7 @@
 
       container.innerHTML = `
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-          <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Ventas 2026</p>
+          <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Incentivos 2026</p>
           <p class="text-3xl font-extrabold text-emerald-600 mt-2">$${Math.round(total).toLocaleString('es-EC')}</p>
         </div>
       `;
@@ -1330,12 +1375,15 @@
 
     document.getElementById('searchMedios').addEventListener('input', renderDashboard);
     document.getElementById('filterMesMedios').addEventListener('change', renderDashboard);
+    document.getElementById('filterGrupoMedios').addEventListener('change', renderDashboard);
 
     document.getElementById('searchServicioFee').addEventListener('input', renderDashboard);
     document.getElementById('filterMesServicioFee').addEventListener('change', renderDashboard);
+    document.getElementById('filterGrupoFee').addEventListener('change', renderDashboard);
 
     document.getElementById('searchTec').addEventListener('input', renderDashboard);
     document.getElementById('filterMesTec').addEventListener('change', renderDashboard);
+    document.getElementById('filterGrupoTec').addEventListener('change', renderDashboard);
 
     document.getElementById('searchIncentivos').addEventListener('input', renderDashboard);
     document.getElementById('filterMarcaIncentivos').addEventListener('change', renderDashboard);
